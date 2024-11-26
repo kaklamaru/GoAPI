@@ -1,0 +1,49 @@
+RESTAPI/
+│
+├── cmd/
+│   └── main.go                      # Entry point ของแอปพลิเคชัน
+│
+├── config/
+│   └── config.go                    # การตั้งค่าคอนฟิกต่างๆ (e.g., JWT secret, database)
+│
+├── domain/
+│   ├── entities/
+│   │   ├── user.go                  # Struct ของ User
+│   │   ├── student.go               # Struct ของ Student
+│   │   └── teacher.go               # Struct ของ Teacher
+│   │
+│   └── repositories/
+│       ├── user_repository.go       # Interface สำหรับ User Repository
+│       ├── student_repository.go    # Interface สำหรับ Student Repository
+│       └── teacher_repository.go    # Interface สำหรับ Teacher Repository
+│
+├── infrastructure/
+│   ├── database/
+│   │   └── db.go                    # การเชื่อมต่อกับฐานข้อมูล (GORM)
+│   │
+│   └── jwt/
+│       └── jwt_service.go           # การสร้างและตรวจสอบ JWT
+│
+├── interfaces/
+│   ├── controllers/
+│   │   ├── user_controller.go       # Logic สำหรับ User API (Login, Register)
+│   │   ├── student_controller.go    # Logic สำหรับ Student API
+│   │   └── teacher_controller.go    # Logic สำหรับ Teacher API
+│   │
+│   ├── middleware/
+│   │   ├── auth_middleware.go       # Middleware สำหรับตรวจสอบ JWT
+│   │   └── role_middleware.go       # Middleware สำหรับตรวจสอบ Role
+│   │
+│   └── routes/
+│       └── routes.go                # การรวมเส้นทาง API
+│
+├── usecases/
+│   ├── user_usecase.go              # Logic ธุรกิจเกี่ยวกับ User
+│   ├── student_usecase.go           # Logic ธุรกิจเกี่ยวกับ Student
+│   └── teacher_usecase.go           # Logic ธุรกิจเกี่ยวกับ Teacher
+│
+├── pkg/
+│   ├── hash.go                      # ฟังก์ชันสำหรับ Hash/Verify Password
+│   └── validator.go                 # Utility สำหรับ Validate Data
+│
+└── go.mod                           # Go Modules
