@@ -42,7 +42,8 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
 	// teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
 	// student := protected.Group("/student", middleware.RoleMiddleware("student"))
-
+	
+	protected.Get("/userbyclaim",userController.GetUserByClaims)
 	// เส้นทางสำหรับการเพิ่มคณะ(admin)
 	admin.Post("/faculties", facultyController.AddFaculty)
 	// เส้นทางสำหรับการแก้ไขคณะ(admin)

@@ -11,6 +11,7 @@ type UserRepository interface {
     CreateUser(tx transaction.Transaction, user *entities.User) error
 	GetUserByEmail(email string) (*entities.User, error)
     GetStudentByUserID(userID uint) (*entities.Student, error)
+    GetTeacherByUserID(userID uint) (*entities.Teacher, error)
 }
 
 type GormUserRepository struct {
@@ -86,4 +87,12 @@ func NewGormTeacherRepository(db *gorm.DB) *GormTeacherRepository {
 func (r *GormTeacherRepository) CreateTeacher(tx transaction.Transaction, teacher *entities.Teacher) error {
     gormTx := tx.(*transaction.GormTransaction)
     return gormTx.GetDB().Create(teacher).Error
+}
+func (r *GormUserRepository) GetTeacherByUserID(userID uint) (*entities.Teacher, error) {
+    var teacher entities.Teacher
+    result := r.db.Where("user_id = ?", userID).First(&teacher)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    return &teacher, nil
 }

@@ -8,6 +8,7 @@ import (
     "github.com/gofiber/fiber/v2"
 	"time"
 	"RESTAPI/infrastructure/jwt"
+    jwtpkg "github.com/golang-jwt/jwt/v5"
 )
 
 type UserController struct {
@@ -198,31 +199,51 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	})
 }
 
-// func (c *UserController) GetStudentByClaims(ctx *fiber.Ctx) error {
-//     // ดึง claims จาก context
-//     claims, ok := ctx.Locals("claims").(jwt.MapClaims)
-//     if !ok {
-//         return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-//             "error": "Invalid claims",
-//         })
-//     }
+func (c *UserController) GetUserByClaims(ctx *fiber.Ctx) error {
+    // ดึง claims จาก context
+    claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
+    if !ok {
+        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "error": "Invalid claims",
+        })
+    }
 
-//     // สมมุติว่า claims มี field ที่ชื่อ "user_id" และ "role" ใน JWT
-//     userID, ok := claims["user_id"].(float64) // หรือใช้ประเภทที่เหมาะสมกับข้อมูลที่เก็บใน JWT
-//     if !ok {
-//         return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-//             "error": "Invalid user_id in claims",
-//         })
-//     }
+    // ดึง user_id จาก claims
+    userIDFloat, ok := claims["user_id"].(float64)
+    if !ok {
+        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "error": "Invalid user_id in claims",
+        })
+    }
+    userID := uint(userIDFloat)
 
-//     // ดึงข้อมูลจากฐานข้อมูลโดยใช้ userID ที่ได้จาก claims
-//     student, err := c.userUsecase.GetStudentByUserID(int(userID))
-//     if err != nil {
-//         return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-//             "error": "Failed to retrieve student data",
-//         })
-//     }
-
-//     // ส่งข้อมูล student
-//     return ctx.Status(fiber.StatusOK).JSON(student)
-// }
+    // ตรวจสอบ role จาก claims
+    role := claims["role"]
+    
+    // ใช้ if-else เพื่อตรวจสอบ role
+    if role == "student" {
+        // ถ้า role เป็น "student"
+        student, err := c.userUsecase.GetStudentByUserID(userID)
+        if err != nil {
+            return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+                "error": "Failed to retrieve student data",
+            })
+        }
+        return ctx.Status(fiber.StatusOK).JSON(student)
+        
+    } else if role == "teacher" || role == "admin" {
+        // ถ้า role เป็น "teacher"
+        teacher, err := c.userUsecase.GetTeacherByUserID(userID)
+        if err != nil {
+            return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+                "error": "Failed to retrieve teacher data",
+            })
+        }
+        return ctx.Status(fiber.StatusOK).JSON(teacher)
+    
+    } else {
+        return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+            "error": "Unauthorized access",
+        })
+    }
+}
