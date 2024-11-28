@@ -59,6 +59,24 @@ func (c *BranchController) GetBranch(ctx *fiber.Ctx) error{
 	// ส่งคืนข้อมูลคณะที่พบในรูปแบบ JSON
     return ctx.Status(http.StatusOK).JSON(branch)
 }
+func (c *BranchController) GetBranchesByFaculty(ctx *fiber.Ctx) error{
+	idstr := ctx.Params("id")
+	idint, err := strconv.Atoi(idstr)
+    if err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid id format",
+        })
+    }
+    id := uint(idint)
+	branch,err:= c.usecase.GetBranchesByFaculty(id)
+	if err != nil {
+        return ctx.Status(http.StatusNotFound).JSON(fiber.Map{
+            "error": "Branch not found",
+        })
+    }
+	// ส่งคืนข้อมูลคณะที่พบในรูปแบบ JSON
+    return ctx.Status(http.StatusOK).JSON(branch)
+}
 
 func (c *BranchController) UpdateBranch(ctx *fiber.Ctx) error{
 	branch := new(entities.Branch)

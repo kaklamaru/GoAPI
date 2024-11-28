@@ -1,4 +1,4 @@
-package jwtimpl
+package jwt
 
 import (
 	"errors"
@@ -26,7 +26,10 @@ func (j *JWTService) GenerateJWT(userID uint, role string) (string, error) {
 		"exp":     time.Now().Add(24 * time.Hour).Unix(), // กำหนดหมดอายุ 24 ชั่วโมง
 	}
 
+	// สร้าง token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// เซ็นต์ token และคืนค่า
 	return token.SignedString([]byte(j.SecretKey))
 }
 
@@ -38,12 +41,15 @@ func (j *JWTService) ValidateJWT(tokenString string) (jwt.MapClaims, error) {
 		}
 		return []byte(j.SecretKey), nil
 	})
+
 	if err != nil {
 		return nil, err
 	}
 
+	// ตรวจสอบว่า token เป็น valid และ cast claims ไปยัง jwt.MapClaims
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims, nil
 	}
+
 	return nil, errors.New("invalid token")
 }

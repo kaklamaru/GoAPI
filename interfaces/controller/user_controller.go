@@ -13,10 +13,10 @@ import (
 type UserController struct {
     userUsecase    usecase.UserUsecase
     txManager      transaction.TransactionManager
-	jwtService     jwtimpl.JWTService
+	jwtService     jwt.JWTService
 }
 
-func NewUserController(userUsecase usecase.UserUsecase, txManager transaction.TransactionManager,jwtService jwtimpl.JWTService) *UserController {
+func NewUserController(userUsecase usecase.UserUsecase, txManager transaction.TransactionManager,jwtService jwt.JWTService) *UserController {
     return &UserController{
         userUsecase: userUsecase,
         txManager:   txManager,
@@ -187,8 +187,8 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		Name:     "token",                        // ชื่อคุกกี้
 		Value:    token,                          // ค่า JWT
 		Expires:  time.Now().Add(24 * time.Hour), // วันหมดอายุ (24 ชั่วโมง)
-		HTTPOnly: true,                           // ป้องกันการเข้าถึงผ่าน JavaScript
-		// Secure:   true,             // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
+		HTTPOnly: false,                           // ป้องกันการเข้าถึงผ่าน JavaScript
+		Secure:   false,             // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
 		SameSite: "Lax", // นโยบาย SameSite
 	})
 

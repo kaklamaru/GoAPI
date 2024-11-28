@@ -10,6 +10,7 @@ type BranchUsecase interface{
 	GetAllBranches() ([]entities.Branch, error)
 	GetBranch(id uint) (*entities.Branch, error)
 	UpdateBranch(branch *entities.Branch) error
+	GetBranchesByFaculty(id uint) ([]entities.Branch,error)
 }
 
 type branchUsecase struct{
@@ -26,6 +27,10 @@ func (u *branchUsecase) AddBranch(branch *entities.Branch)error{
 
 func (u *branchUsecase) GetAllBranches() ([]entities.Branch,error){
 	return u.repo.GetAllBranches()
+}
+
+func (u *branchUsecase) GetBranchesByFaculty(id uint) ([]entities.Branch,error){
+	return u.repo.GetAllBranchesByFaculty(int(id))
 }
 
 func (u *branchUsecase) GetBranch(id uint) (*entities.Branch,error){

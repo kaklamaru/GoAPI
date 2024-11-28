@@ -5,31 +5,31 @@ import (
 	"RESTAPI/domain/transaction"
 	"RESTAPI/infrastructure/database"
 	"RESTAPI/infrastructure/jwt"
+	"RESTAPI/infrastructure/middleware"
 	"RESTAPI/interfaces/controller"
-	"RESTAPI/interfaces/middleware"
 	"RESTAPI/usecase"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
+	// "github.com/golang-jwt/jwt/v5"
 )
 
 // SetupRoutes ฟังก์ชันสำหรับกำหนดเส้นทางทั้งหมด
-func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwtimpl.JWTService) {
-	// เส้นทางสำหรับ health check
-	app.Get("/ok", func(c *fiber.Ctx) error {
-		return c.SendString("OK")
-	})
+func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTService) {
 
 	txManager := transaction.NewGormTransactionManager(db.GetDb())
-
-	// สร้าง Repository
 	userRepo := repository.NewGormUserRepository(db.GetDb())
 	studentRepo := repository.NewGormStudentRepository(db.GetDb())
 	teacherRepo := repository.NewGormTeacherRepository(db.GetDb())
-
-	// สร้าง Usecase
-	userUsecase := usecase.NewUserUsecase(userRepo, studentRepo,teacherRepo)
-	userController := controller.NewUserController(userUsecase,txManager,*jwtService)
+	userUsecase := usecase.NewUserUsecase(userRepo, studentRepo, teacherRepo)
+	userController := controller.NewUserController(userUsecase, txManager, *jwtService)
+	
+	facultyRepo := repository.NewFacultyRepository(db.GetDb())
+	facultyUsecase := usecase.NewFacultyUsecase(facultyRepo)
+	facultyController := controller.NewFacultyController(facultyUsecase)
+	
+	branchRepo := repository.NewBranchRepository(db.GetDb())
+	branchUsecase := usecase.NewBranchUsecase(branchRepo)
+	branchController := controller.NewBranchController(branchUsecase)
 
 	app.Post("/register/student", userController.RegisterStudent)
 	app.Post("/register/teacher", userController.RegisterTeacher)
@@ -37,53 +37,28 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwtimpl.JWTSe
 
 	// Protected Routes Group
 	protected := app.Group("/protected", middleware.JWTMiddlewareFromCookie(jwtService))
+	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
+	// teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
+	// student := protected.Group("/student", middleware.RoleMiddleware("student"))
 
-	protected.Get("/profile", func(ctx *fiber.Ctx) error {
-	// แปลง claims เป็น jwt.MapClaims
-	claims, ok := ctx.Locals("claims").(jwt.MapClaims)
-	if !ok {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid token claims",
-		})
-	}
-
-	// ใช้ claims เพื่อนำค่า user_id และ role ออกมา
-	userID := claims["user_id"]
-	role := claims["role"]
-
-	return ctx.JSON(fiber.Map{
-		"user_id": userID,
-		"role":    role,
-	})
-})
-
-
-	facultyRepo := repository.NewFacultyRepository(db.GetDb())
-    facultyUsecase := usecase.NewFacultyUsecase(facultyRepo)
-    facultyController := controller.NewFacultyController(facultyUsecase)
-
-	// เส้นทางสำหรับการเพิ่มคณะ
-	protected.Post("/faculties", facultyController.AddFaculty)
-	// เส้นทางสำหรับการแก้ไขคณะ
-	protected.Put("/faculties/:id", facultyController.UpdateFaculty)
+	// เส้นทางสำหรับการเพิ่มคณะ(admin)
+	admin.Post("/faculties", facultyController.AddFaculty)
+	// เส้นทางสำหรับการแก้ไขคณะ(admin)
+	admin.Put("/faculties/:id", facultyController.UpdateFaculty)
 	// เส้นทางสำหรับการดึงข้อมูลคณะทั้งหมด
-	protected.Get("/faculties", facultyController.GetAllFaculties)
+	app.Get("/faculties", facultyController.GetAllFaculties)
 	// เส้นทางสำหรับการดึงข้อมูลคณะตาม ID
-	protected.Get("/faculties/:id", facultyController.GetFaculty)
+	app.Get("/faculties/:id", facultyController.GetFaculty)
 
-	branchRepo := repository.NewBranchRepository(db.GetDb())
-	branchUsecase := usecase.NewBranchUsecase(branchRepo)
-	branchController := controller.NewBranchController(branchUsecase)
-	// เพิ่ม
-	protected.Post("/branch",branchController.AddBranch)
+	// เพิ่ม (admin)
+	admin.Post("/branch", branchController.AddBranch)
 	// ดึงสาขาทั้งหมด
-	protected.Get("/branch",branchController.GetAllBranches)
+	app.Get("/branch", branchController.GetAllBranches)
 	// ดึงบางสาขา
-	protected.Get("/branch/:id",branchController.GetBranch)
-	
-	protected.Put("/branch/:id", branchController.UpdateBranch)
+	app.Get("/branch/:id", branchController.GetBranch)
+	// ดึงตามรหัสคณะ
+	app.Get("/branchbyfaculty/:id",branchController.GetBranchesByFaculty)
+	// แก้ไข (admin)
+	admin.Put("/branch/:id", branchController.UpdateBranch)
 
-	
-	// protected.Post("/student",stdController.AddStudent)
-	// protected.Get("/student/:id",stdController.GetStudentByID)
 }

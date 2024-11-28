@@ -44,22 +44,6 @@ func (m *mysqlDatabase) AutoMigrate() error {
     )
 }
 
-// // ฟังก์ชันสำหรับตั้งค่าและเชื่อมต่อฐานข้อมูล
-// func SetupDatabase(cfg *config.Config) Database {
-//     db, err := NewMySQLDatabase(cfg)
-//     if err != nil {
-//         log.Fatalf("failed to connect to database: %v", err)
-//     }
-
-//     err = db.AutoMigrate()
-//     if err != nil {
-//         log.Fatalf("failed to migrate database: %v", err)
-//     }
-
-//     log.Println("Database connected and migrated successfully!")
-//     return db
-// }
-
 // MYSQL
 func SetupDatabase(cfg *config.Config) Database {
     db, err := NewMySQLDatabase(cfg)
@@ -102,36 +86,5 @@ func SetupDatabase(cfg *config.Config) Database {
     return db
 }
 
-// POSTGRESQL
-// func SetupDatabase(cfg *config.Config) Database {
-//     db, err := NewMySQLDatabase(cfg)
-//     if err != nil {
-//         log.Fatalf("failed to connect to database: %v", err)
-//     }
 
-//     err = db.AutoMigrate()
-//     if err != nil {
-//         log.Fatalf("failed to migrate database: %v", err)
-//     }
-
-//     // เพิ่ม Constraint เพื่อป้องกัน UserID ซ้ำระหว่าง Students และ Teachers
-//     if err := db.GetDb().Exec(`
-//         ALTER TABLE students
-//         ADD CONSTRAINT check_user_id_not_in_teacher
-//         CHECK (user_id NOT IN (SELECT user_id FROM teachers))
-//     `).Error; err != nil {
-//         log.Printf("failed to add constraint to students: %v", err)
-//     }
-
-//     if err := db.GetDb().Exec(`
-//         ALTER TABLE teachers
-//         ADD CONSTRAINT check_user_id_not_in_student
-//         CHECK (user_id NOT IN (SELECT user_id FROM students))
-//     `).Error; err != nil {
-//         log.Printf("failed to add constraint to teachers: %v", err)
-//     }
-
-//     log.Println("Database connected and migrated successfully!")
-//     return db
-// }
 

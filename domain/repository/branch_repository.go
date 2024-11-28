@@ -10,6 +10,7 @@ type BranchRepository interface {
 	GetAllBranches() ([]entities.Branch, error)
 	GetBranch(id uint) (*entities.Branch, error)
 	UpdateBranch(branch *entities.Branch) error
+	GetAllBranchesByFaculty(facultyId int) ([]entities.Branch,error)
 }
 
 type branchRepository struct {
@@ -42,4 +43,13 @@ func (r *branchRepository) GetBranch(id uint) (*entities.Branch, error) {
 
 func (r *branchRepository) UpdateBranch(branch *entities.Branch) error {
 	return r.db.Save(branch).Error
+}
+
+func (r *branchRepository) GetAllBranchesByFaculty(facultyId int) ([]entities.Branch,error){
+	var branches []entities.Branch
+	result := r.db.Where("faculty_id = ?", facultyId).Find(&branches)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    return branches, nil
 }

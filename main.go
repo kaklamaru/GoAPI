@@ -7,7 +7,6 @@ import (
 	"RESTAPI/interfaces/server"
 	"log"
 
-	// "github.com/golang-jwt/jwt/v5"
 )
 
 func main() {
@@ -17,7 +16,7 @@ func main() {
 	// ตั้งค่าและเชื่อมต่อฐานข้อมูล
 	db := database.SetupDatabase(cfg)
 	
-	jwtService := jwtimpl.NewJWTService(cfg)
+	jwtService := jwt.NewJWTService(cfg)
 	
 	// สร้างและเริ่มต้นเซิร์ฟเวอร์ Fiber โดยใช้ค่าคอนฟิกและฐานข้อมูล
 	// สร้าง instance ของ server
