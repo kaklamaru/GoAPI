@@ -1,11 +1,13 @@
 package server
 
 import (
-	"fmt"
 	"RESTAPI/config"
-	"RESTAPI/infrastructure/jwt"
 	"RESTAPI/infrastructure/database"
+	"RESTAPI/infrastructure/jwt"
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
@@ -29,6 +31,13 @@ func NewServer(cfg *config.Config, db database.Database ,jwtService *jwt.JWTServ
 	}
 
 	app := fiber.New()
+
+	app.Use(cors.New(cors.Config{
+        AllowOrigins: "http://localhost:3000/, https://your-frontend-domain.com/", // อนุญาตเฉพาะ origin ที่ระบุ
+        AllowHeaders: "Origin, Content-Type, Accept, Authorization",            // Headers ที่อนุญาต
+        AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",                        // Methods ที่อนุญาต
+        AllowCredentials: true,                                                // รองรับ cookies
+    }))
 
 	// กำหนด middleware สำหรับการกู้คืนจาก panic
 	app.Use(recover.New())

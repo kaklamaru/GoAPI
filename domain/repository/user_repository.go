@@ -10,6 +10,7 @@ import (
 type UserRepository interface {
     CreateUser(tx transaction.Transaction, user *entities.User) error
 	GetUserByEmail(email string) (*entities.User, error)
+    GetStudentByUserID(userID uint) (*entities.Student, error)
 }
 
 type GormUserRepository struct {
@@ -58,6 +59,14 @@ func (r *GormStudentRepository) CreateStudent(tx transaction.Transaction, studen
         return err // ถ้ามีข้อผิดพลาดใน CreateStudent ให้ส่งกลับ
     }
     return nil
+}
+func (r *GormUserRepository) GetStudentByUserID(userID uint) (*entities.Student, error) {
+    var student entities.Student
+    result := r.db.Where("user_id = ?", userID).First(&student)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    return &student, nil
 }
 
 

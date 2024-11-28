@@ -11,6 +11,7 @@ type UserUsecase interface {
     RegisterUserAndStudent(tx transaction.Transaction, user *entities.User, student *entities.Student) error
 	RegisterUserAndTeacher(tx transaction.Transaction, user *entities.User, teacher *entities.Teacher) error
     GetUserByEmail(email string) (*entities.User, error)
+    GetStudentByUserID(userID uint) (*entities.Student, error)
 }
 
 type userUsecase struct {
@@ -25,6 +26,9 @@ func NewUserUsecase(userRepo repository.UserRepository, studentRepo repository.S
         studentRepo: studentRepo,
         teacherRepo: teacherRepo,
     }
+}
+func (u *userUsecase) GetStudentByUserID(userID uint) (*entities.Student, error){
+    return u.userRepo.GetStudentByUserID(userID)
 }
 
 // รับ tx เป็นพารามิเตอร์ และส่ง tx ไปให้กับ repository ในแต่ละฟังก์ชัน

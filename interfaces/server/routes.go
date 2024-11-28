@@ -31,6 +31,8 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	branchUsecase := usecase.NewBranchUsecase(branchRepo)
 	branchController := controller.NewBranchController(branchUsecase)
 
+	
+
 	app.Post("/register/student", userController.RegisterStudent)
 	app.Post("/register/teacher", userController.RegisterTeacher)
 	app.Post("/login", userController.Login)
