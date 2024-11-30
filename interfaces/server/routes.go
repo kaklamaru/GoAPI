@@ -37,31 +37,32 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	app.Post("/register/teacher", userController.RegisterTeacher)
 	app.Post("/login", userController.Login)
 
-	// Protected Routes Group
 	protected := app.Group("/protected", middleware.JWTMiddlewareFromCookie(jwtService))
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
 	// teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
 	// student := protected.Group("/student", middleware.RoleMiddleware("student"))
 	
+
+	// ดึงข้อมูลจาก claim  /protected
 	protected.Get("/userbyclaim",userController.GetUserByClaims)
-	// เส้นทางสำหรับการเพิ่มคณะ(admin)
-	admin.Post("/faculties", facultyController.AddFaculty)
-	// เส้นทางสำหรับการแก้ไขคณะ(admin)
-	admin.Put("/faculties/:id", facultyController.UpdateFaculty)
+	// เส้นทางสำหรับการเพิ่มคณะ(admin) /protected/admin
+	admin.Post("/faculty", facultyController.AddFaculty)
+	// เส้นทางสำหรับการแก้ไขคณะ(admin) /protected/admin
+	admin.Put("/faculty/:id", facultyController.UpdateFaculty)
 	// เส้นทางสำหรับการดึงข้อมูลคณะทั้งหมด
 	app.Get("/faculties", facultyController.GetAllFaculties)
 	// เส้นทางสำหรับการดึงข้อมูลคณะตาม ID
-	app.Get("/faculties/:id", facultyController.GetFaculty)
+	app.Get("/faculty/:id", facultyController.GetFaculty)
 
-	// เพิ่ม (admin)
+	// เพิ่ม (admin) /protected/admin
 	admin.Post("/branch", branchController.AddBranch)
 	// ดึงสาขาทั้งหมด
-	app.Get("/branch", branchController.GetAllBranches)
+	app.Get("/branches", branchController.GetAllBranches)
 	// ดึงบางสาขา
 	app.Get("/branch/:id", branchController.GetBranch)
 	// ดึงตามรหัสคณะ
 	app.Get("/branchbyfaculty/:id",branchController.GetBranchesByFaculty)
-	// แก้ไข (admin)
+	// แก้ไข (admin) /protected/admin
 	admin.Put("/branch/:id", branchController.UpdateBranch)
 
 }

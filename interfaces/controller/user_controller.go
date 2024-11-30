@@ -98,6 +98,7 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
         LastName  string `json:"last_name"`
         Phone     string `json:"phone"`
         Code      string `json:"code"`
+        Role      string `json:"role"`
     }
 
     // รับค่าจาก body
@@ -122,12 +123,16 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
             }
         }
     }()
+    // กำหนด Role ให้เป็น "teacher" หากไม่มีการส่งค่ามา
+    if req.Role == "" {
+        req.Role = "teacher"
+    }
 
-    // สร้าง user
+    // สร้าง User entity
     user := &entities.User{
         Email:    req.Email,
         Password: hashedPassword,
-        Role:     "teacher", // ระบุ role เป็น "teacher"
+        Role:     req.Role,
     }
 
     // สร้าง teacher
@@ -145,7 +150,7 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
     }
 
     // ส่งผลลัพธ์สำเร็จ
-    return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Teacher registered successfully"})
+    return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
 }
 
 
