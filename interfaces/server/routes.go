@@ -17,21 +17,19 @@ import (
 func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTService) {
 
 	txManager := transaction.NewGormTransactionManager(db.GetDb())
-	userRepo := repository.NewGormUserRepository(db.GetDb())
-	studentRepo := repository.NewGormStudentRepository(db.GetDb())
-	teacherRepo := repository.NewGormTeacherRepository(db.GetDb())
+	userRepo := repository.NewUserRepository(db.GetDb())
+	studentRepo := repository.NewStudentRepository(db.GetDb())
+	teacherRepo := repository.NewTeacherRepository(db.GetDb())
 	userUsecase := usecase.NewUserUsecase(userRepo, studentRepo, teacherRepo)
 	userController := controller.NewUserController(userUsecase, txManager, *jwtService)
-	
+
 	facultyRepo := repository.NewFacultyRepository(db.GetDb())
 	facultyUsecase := usecase.NewFacultyUsecase(facultyRepo)
 	facultyController := controller.NewFacultyController(facultyUsecase)
-	
+
 	branchRepo := repository.NewBranchRepository(db.GetDb())
 	branchUsecase := usecase.NewBranchUsecase(branchRepo)
 	branchController := controller.NewBranchController(branchUsecase)
-
-	
 
 	app.Post("/register/student", userController.RegisterStudent)
 	app.Post("/register/teacher", userController.RegisterTeacher)
@@ -39,12 +37,13 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 	protected := app.Group("/protected", middleware.JWTMiddlewareFromCookie(jwtService))
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
-	// teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
-	// student := protected.Group("/student", middleware.RoleMiddleware("student"))
-	
+	teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
+	student := protected.Group("/student", middleware.RoleMiddleware("student"))
 
 	// ดึงข้อมูลจาก claim  /protected
-	protected.Get("/userbyclaim",userController.GetUserByClaims)
+	protected.Get("/userbyclaim", userController.GetUserByClaims)
+	student.Put("/editstudent", userController.EditStudentByID)
+	teacher.Put("/editteacher", userController.EditTeacherByID)
 	// เส้นทางสำหรับการเพิ่มคณะ(admin) /protected/admin
 	admin.Post("/faculty", facultyController.AddFaculty)
 	// เส้นทางสำหรับการแก้ไขคณะ(admin) /protected/admin
@@ -62,7 +61,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	// ดึงบางสาขา
 	app.Get("/branch/:id", branchController.GetBranch)
 	// ดึงตามรหัสคณะ
-	app.Get("/branchbyfaculty/:id",branchController.GetBranchesByFaculty)
+	app.Get("/branchbyfaculty/:id", branchController.GetBranchesByFaculty)
 	// แก้ไข (admin) /protected/admin
 	admin.Put("/branch/:id", branchController.UpdateBranch)
 	admin.Delete("/branch/:id", branchController.DeleteBranchByID)

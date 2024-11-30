@@ -153,8 +153,6 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
     return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
 }
 
-
-
 func (c *UserController) Login(ctx *fiber.Ctx) error {
 	type loginRequest struct {
 		Email    string `json:"email"`
@@ -251,4 +249,73 @@ func (c *UserController) GetUserByClaims(ctx *fiber.Ctx) error {
             "error": "Unauthorized access",
         })
     }
+}
+
+func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error{
+    var req struct {
+        UserID    uint   `json:"user_id"`
+        TitleName string `json:"title_name"`
+        FirstName string `json:"first_name"`
+        LastName  string `json:"last_name"`
+        Phone     string `json:"phone"`
+        Code      string `json:"code"`
+        Year      uint   `json:"year"`
+        BranchID  uint   `json:"branch_id"`
+    }
+    if err := ctx.BodyParser(&req); err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid request payload",
+        })
+    }
+    student := &entities.Student{
+        TitleName: req.TitleName,
+        FirstName: req.FirstName,
+        LastName:  req.LastName,
+        Phone:     req.Phone,
+        Code:      req.Code,
+        Year:      req.Year,
+        BranchID:  req.BranchID,
+        UserID:    req.UserID, 
+    }
+     // เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
+     if err := c.userUsecase.EditStudentByID(student); err != nil {
+        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to edit student"})
+    }
+
+    return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+        "message": "Student edited successfully",
+    })
+
+}
+func (c *UserController) EditTeacherByID(ctx *fiber.Ctx) error{
+    var req struct {
+        UserID    uint   `json:"user_id"`
+        TitleName string `json:"title_name"`
+        FirstName string `json:"first_name"`
+        LastName  string `json:"last_name"`
+        Phone     string `json:"phone"`
+        Code      string `json:"code"`
+    }
+    if err := ctx.BodyParser(&req); err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid request payload",
+        })
+    }
+    teacher := &entities.Teacher{
+        TitleName: req.TitleName,
+        FirstName: req.FirstName,
+        LastName:  req.LastName,
+        Phone:     req.Phone,
+        Code:      req.Code,
+        UserID:    req.UserID, 
+    }
+     // เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
+     if err := c.userUsecase.EditTeacherByID(teacher); err != nil {
+        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to edit teacher"})
+    }
+
+    return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+        "message": "Teacher edited successfully",
+    })
+
 }
