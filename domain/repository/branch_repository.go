@@ -2,6 +2,9 @@ package repository
 
 import (
 	"RESTAPI/domain/entities"
+	"errors"
+	"fmt"
+
 	"gorm.io/gorm"
 )
 
@@ -10,7 +13,8 @@ type BranchRepository interface {
 	GetAllBranches() ([]entities.Branch, error)
 	GetBranch(id uint) (*entities.Branch, error)
 	UpdateBranch(branch *entities.Branch) error
-	GetAllBranchesByFaculty(facultyId int) ([]entities.Branch,error)
+	GetAllBranchesByFaculty(facultyId int) ([]entities.Branch, error)
+	DeleteBranchByID(id uint) (*entities.Branch, error)
 }
 
 type branchRepository struct {
@@ -45,11 +49,31 @@ func (r *branchRepository) UpdateBranch(branch *entities.Branch) error {
 	return r.db.Save(branch).Error
 }
 
-func (r *branchRepository) GetAllBranchesByFaculty(facultyId int) ([]entities.Branch,error){
+func (r *branchRepository) GetAllBranchesByFaculty(facultyId int) ([]entities.Branch, error) {
 	var branches []entities.Branch
 	result := r.db.Where("faculty_id = ?", facultyId).Find(&branches)
-    if result.Error != nil {
-        return nil, result.Error
-    }
-    return branches, nil
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return branches, nil
+}
+
+func (r *branchRepository) DeleteBranchByID(id uint) (*entities.Branch, error) {
+	branch := &entities.Branch{}
+
+	// ค้นหาข้อมูล branch ตาม id
+	if err := r.db.First(branch, "branch_id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("branch with ID %d not found", id)
+		}
+		return nil, err
+	}
+
+	// ลบ branch
+	if err := r.db.Delete(branch).Error; err != nil {
+		return nil, err
+	}
+
+	// ส่งคืน branch ที่ถูกลบ
+	return branch, nil
 }

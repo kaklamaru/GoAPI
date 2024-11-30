@@ -48,7 +48,6 @@ func (c *BranchController) GetBranch(ctx *fiber.Ctx) error{
             "error": "Invalid id format",
         })
     }
-    // แปลง facultyID จาก int เป็น uint
     id := uint(idint)
 	branch,err:= c.usecase.GetBranch(id)
 	if err != nil {
@@ -92,3 +91,31 @@ func (c *BranchController) UpdateBranch(ctx *fiber.Ctx) error{
 	}
 	return ctx.Status(http.StatusOK).JSON(branch)
 }
+
+func (c *BranchController) DeleteBranchByID(ctx *fiber.Ctx) error {
+    idstr := ctx.Params("id")
+	idint, err := strconv.Atoi(idstr)
+    if err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid id format",
+        })
+    }
+    id := uint(idint)
+
+    // เรียกใช้ usecase เพื่อลบ branch ตาม ID
+    branch, err := c.usecase.DeleteBranchByID(id)
+    if err != nil {
+        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": err.Error(),
+        })
+    }
+
+    return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+        "message": "Branch deleted successfully",
+        "branch": branch, 
+    })
+}
+
+
+
+

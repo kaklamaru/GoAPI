@@ -101,3 +101,24 @@ func (c *FacultyController) GetFaculty(ctx *fiber.Ctx) error {
     // ส่งคืนข้อมูลคณะที่พบในรูปแบบ JSON
     return ctx.Status(http.StatusOK).JSON(faculty)
 }
+
+func (c *FacultyController) DeleteFacultyByID(ctx *fiber.Ctx) error{
+    idstr := ctx.Params("id")
+    idint,err := strconv.Atoi(idstr)
+    if err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid id format",
+        })
+    }
+    id := uint(idint)
+    faculty,err := c.usecase.DeleteFacultyByID(id)
+    if err != nil {
+        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error":err.Error(),
+        })
+    }
+    return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+        "message": "Faculty deleted successfully",
+        "faculty": faculty, 
+    })
+}

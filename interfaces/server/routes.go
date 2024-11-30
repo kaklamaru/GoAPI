@@ -49,6 +49,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin.Post("/faculty", facultyController.AddFaculty)
 	// เส้นทางสำหรับการแก้ไขคณะ(admin) /protected/admin
 	admin.Put("/faculty/:id", facultyController.UpdateFaculty)
+	admin.Delete("/faculty/:id", facultyController.DeleteFacultyByID)
 	// เส้นทางสำหรับการดึงข้อมูลคณะทั้งหมด
 	app.Get("/faculties", facultyController.GetAllFaculties)
 	// เส้นทางสำหรับการดึงข้อมูลคณะตาม ID
@@ -64,5 +65,6 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	app.Get("/branchbyfaculty/:id",branchController.GetBranchesByFaculty)
 	// แก้ไข (admin) /protected/admin
 	admin.Put("/branch/:id", branchController.UpdateBranch)
+	admin.Delete("/branch/:id", branchController.DeleteBranchByID)
 
 }
