@@ -40,6 +40,7 @@ func (m *mysqlDatabase) AutoMigrate() error {
         &entities.Branch{},
         &entities.Student{},
         &entities.Teacher{},
+        &entities.Event{},
         
     )
 }

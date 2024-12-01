@@ -10,7 +10,6 @@ import (
 	"RESTAPI/usecase"
 
 	"github.com/gofiber/fiber/v2"
-	// "github.com/golang-jwt/jwt/v5"
 )
 
 // SetupRoutes ฟังก์ชันสำหรับกำหนดเส้นทางทั้งหมด
@@ -31,6 +30,11 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	branchUsecase := usecase.NewBranchUsecase(branchRepo)
 	branchController := controller.NewBranchController(branchUsecase)
 
+	eventRepo := repository.NewEventRepository(db.GetDb())
+	eventUsecase := usecase.NewEventUsecase(eventRepo)
+	eventController := controller.NewEventController(eventUsecase)
+
+
 	app.Post("/register/student", userController.RegisterStudent)
 	app.Post("/register/teacher", userController.RegisterTeacher)
 	app.Post("/login", userController.Login)
@@ -40,34 +44,28 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
 	student := protected.Group("/student", middleware.RoleMiddleware("student"))
 
-	// ดึงข้อมูลจาก claim  /protected
 	protected.Get("/userbyclaim", userController.GetUserByClaims)
 	student.Put("/personalinfo", userController.EditStudent)
 	teacher.Put("/personalinfo", userController.EditTeacher)
 	admin.Put("/personalinfo", userController.EditTeacher)
 	admin.Put("/studentinfo", userController.EditStudentByID)
 	admin.Put("/teacherinfo", userController.EditTeacherByID)
-	// เส้นทางสำหรับการเพิ่มคณะ(admin) /protected/admin
 	admin.Post("/faculty", facultyController.AddFaculty)
-	// เส้นทางสำหรับการแก้ไขคณะ(admin) /protected/admin
 	admin.Put("/faculty/:id", facultyController.UpdateFaculty)
 	admin.Delete("/faculty/:id", facultyController.DeleteFacultyByID)
-	// เส้นทางสำหรับการดึงข้อมูลคณะทั้งหมด
 	app.Get("/faculties", facultyController.GetAllFaculties)
-	// เส้นทางสำหรับการดึงข้อมูลคณะตาม ID
 	app.Get("/faculty/:id", facultyController.GetFaculty)
-
-	// เพิ่ม (admin) /protected/admin
 	admin.Post("/branch", branchController.AddBranch)
-	// ดึงสาขาทั้งหมด
 	app.Get("/branches", branchController.GetAllBranches)
-	// ดึงบางสาขา
 	app.Get("/branch/:id", branchController.GetBranch)
-	// ดึงตามรหัสคณะ
 	app.Get("/branchbyfaculty/:id", branchController.GetBranchesByFaculty)
-	// แก้ไข (admin) /protected/admin
 	admin.Put("/branch/:id", branchController.UpdateBranch)
 	admin.Delete("/branch/:id", branchController.DeleteBranchByID)
 	admin.Get("/students", userController.GetAllStudent)
 	admin.Get("/teachers", userController.GetAllTeacher)
+
+	protected.Get("/events",eventController.GetAllEvent)
+	teacher.Post("/event",eventController.CreateEvent)
+	admin.Post("/event",eventController.CreateEvent)
+
 }
