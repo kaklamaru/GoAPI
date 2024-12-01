@@ -40,10 +40,20 @@ func (r *userRepository) GetUserByEmail(email string) (*entities.User, error) {
 	return &user, nil
 }
 
+
+
+
+
+
+
+
+
 // Student Repository
 type StudentRepository interface {
 	CreateStudent(tx transaction.Transaction, student *entities.Student) error
-    EditStudentByID(student *entities.Student) error
+	EditStudentByID(student *entities.Student) error
+	GetAllStudent() ([]entities.Student, error)
+
 }
 
 type studentRepository struct {
@@ -70,16 +80,31 @@ func (r *userRepository) GetStudentByUserID(id uint) (*entities.Student, error) 
 	return &student, nil
 }
 
-func (r *studentRepository) EditStudentByID(student *entities.Student) error{
-    return r.db.Save(student).Error
+func (r *studentRepository) EditStudentByID(student *entities.Student) error {
+	return r.db.Save(student).Error
 }
+func (r *studentRepository) GetAllStudent() ([]entities.Student, error) {
+	var student []entities.Student
+	if err := r.db.Find(&student).Error; err != nil {
+		return nil, err
+	}
+	return student,nil
+}
+
+
+
+
+
+
+
 
 // Teacher Repository
 type TeacherRepository interface {
 	CreateTeacher(tx transaction.Transaction, teacher *entities.Teacher) error
-    EditTeacherByID(teacher *entities.Teacher) error
+	EditTeacherByID(teacher *entities.Teacher) error
+	GetAllTeacher() ([]entities.Teacher, error)
+	
 }
-
 
 type teacherRepository struct {
 	db *gorm.DB
@@ -101,6 +126,15 @@ func (r *userRepository) GetTeacherByUserID(id uint) (*entities.Teacher, error) 
 	}
 	return &teacher, nil
 }
-func (r *teacherRepository) EditTeacherByID(teacher *entities.Teacher) error{
-    return r.db.Save(teacher).Error
+func (r *teacherRepository) EditTeacherByID(teacher *entities.Teacher) error {
+	return r.db.Save(teacher).Error
 }
+
+func (r *teacherRepository) GetAllTeacher() ([]entities.Teacher, error) {
+	var teacher []entities.Teacher
+	if err := r.db.Find(&teacher).Error; err != nil {
+		return nil, err
+	}
+	return teacher,nil
+}
+

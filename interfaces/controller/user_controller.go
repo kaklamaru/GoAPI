@@ -253,7 +253,7 @@ func (c *UserController) GetUserByClaims(ctx *fiber.Ctx) error {
 
 func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error{
     var req struct {
-        UserID    uint   `json:"user_id"`
+        // UserID    uint   `json:"user_id"`
         TitleName string `json:"title_name"`
         FirstName string `json:"first_name"`
         LastName  string `json:"last_name"`
@@ -262,6 +262,21 @@ func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error{
         Year      uint   `json:"year"`
         BranchID  uint   `json:"branch_id"`
     }
+    // ดึง claims จาก context
+    claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
+    if !ok {
+        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "error": "Invalid claims",
+        })
+    }
+    userIDFloat, ok := claims["user_id"].(float64)
+    if !ok {
+        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "error": "Invalid user_id in claims",
+        })
+    }
+    userID := uint(userIDFloat)
+
     if err := ctx.BodyParser(&req); err != nil {
         return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
             "error": "Invalid request payload",
@@ -275,7 +290,7 @@ func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error{
         Code:      req.Code,
         Year:      req.Year,
         BranchID:  req.BranchID,
-        UserID:    req.UserID, 
+        UserID:    userID, 
     }
      // เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
      if err := c.userUsecase.EditStudentByID(student); err != nil {
@@ -289,13 +304,27 @@ func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error{
 }
 func (c *UserController) EditTeacherByID(ctx *fiber.Ctx) error{
     var req struct {
-        UserID    uint   `json:"user_id"`
         TitleName string `json:"title_name"`
         FirstName string `json:"first_name"`
         LastName  string `json:"last_name"`
         Phone     string `json:"phone"`
         Code      string `json:"code"`
     }
+    // ดึง claims จาก context
+    claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
+    if !ok {
+        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "error": "Invalid claims",
+        })
+    }
+    userIDFloat, ok := claims["user_id"].(float64)
+    if !ok {
+        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "error": "Invalid user_id in claims",
+        })
+    }
+    userID := uint(userIDFloat)
+
     if err := ctx.BodyParser(&req); err != nil {
         return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
             "error": "Invalid request payload",
@@ -307,7 +336,7 @@ func (c *UserController) EditTeacherByID(ctx *fiber.Ctx) error{
         LastName:  req.LastName,
         Phone:     req.Phone,
         Code:      req.Code,
-        UserID:    req.UserID, 
+        UserID:    userID, 
     }
      // เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
      if err := c.userUsecase.EditTeacherByID(teacher); err != nil {
@@ -318,4 +347,24 @@ func (c *UserController) EditTeacherByID(ctx *fiber.Ctx) error{
         "message": "Teacher edited successfully",
     })
 
+}
+
+func (c *UserController) GetAllStudent(ctx *fiber.Ctx) error{
+    student,err := c.userUsecase.GetAllStudent()
+    if err != nil {
+        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Unable to retrieve student",
+        })
+    }
+    return ctx.Status(fiber.StatusOK).JSON(student)
+}
+
+func (c *UserController) GetAllTeacher(ctx *fiber.Ctx) error{
+    teacher,err := c.userUsecase.GetAllTeacher()
+    if err != nil {
+        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Unable to retrieve teacher",
+        })
+    }
+    return ctx.Status(fiber.StatusOK).JSON(teacher)
 }

@@ -65,5 +65,6 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	// แก้ไข (admin) /protected/admin
 	admin.Put("/branch/:id", branchController.UpdateBranch)
 	admin.Delete("/branch/:id", branchController.DeleteBranchByID)
-
+	admin.Get("/students",userController.GetAllStudent)
+	admin.Get("/teachers",userController.GetAllTeacher)
 }

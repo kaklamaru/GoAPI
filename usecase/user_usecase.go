@@ -15,6 +15,8 @@ type UserUsecase interface {
     GetTeacherByUserID(userID uint) (*entities.Teacher, error)
     EditStudentByID(student *entities.Student) error
     EditTeacherByID(teacher *entities.Teacher) error
+    GetAllStudent() ([]entities.Student,error)
+    GetAllTeacher() ([]entities.Teacher,error)
 }
 
 type userUsecase struct {
@@ -107,3 +109,9 @@ func (u *userUsecase) EditTeacherByID(teacher *entities.Teacher) error{
     return u.teacherRepo.EditTeacherByID(teacher)
 }
 
+func (u *userUsecase) GetAllStudent() ([]entities.Student,error){
+    return u.studentRepo.GetAllStudent()
+}
+func (u *userUsecase) GetAllTeacher() ([]entities.Teacher,error){
+    return u.teacherRepo.GetAllTeacher()
+}
