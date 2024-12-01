@@ -1,156 +1,157 @@
 package controller
 
 import (
-    "RESTAPI/domain/entities"
-    "RESTAPI/domain/transaction"
-    "RESTAPI/usecase"
-    "RESTAPI/pkg" 
-    "github.com/gofiber/fiber/v2"
-	"time"
+	"RESTAPI/domain/entities"
+	"RESTAPI/domain/transaction"
 	"RESTAPI/infrastructure/jwt"
-    jwtpkg "github.com/golang-jwt/jwt/v5"
+	"RESTAPI/pkg"
+	"RESTAPI/usecase"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	jwtpkg "github.com/golang-jwt/jwt/v5"
 )
 
 type UserController struct {
-    userUsecase    usecase.UserUsecase
-    txManager      transaction.TransactionManager
-	jwtService     jwt.JWTService
+	userUsecase usecase.UserUsecase
+	txManager   transaction.TransactionManager
+	jwtService  jwt.JWTService
 }
 
-func NewUserController(userUsecase usecase.UserUsecase, txManager transaction.TransactionManager,jwtService jwt.JWTService) *UserController {
-    return &UserController{
-        userUsecase: userUsecase,
-        txManager:   txManager,
-		jwtService: jwtService,
-    }
+func NewUserController(userUsecase usecase.UserUsecase, txManager transaction.TransactionManager, jwtService jwt.JWTService) *UserController {
+	return &UserController{
+		userUsecase: userUsecase,
+		txManager:   txManager,
+		jwtService:  jwtService,
+	}
 }
 
 func (c *UserController) RegisterStudent(ctx *fiber.Ctx) error {
-    var req struct {
-        Email     string `json:"email"`
-        Password  string `json:"password"`
-        TitleName string `json:"title_name"`
-        FirstName string `json:"first_name"`
-        LastName  string `json:"last_name"`
-        Phone     string `json:"phone"`
-        Code      string `json:"code"`
-        Year      uint   `json:"year"`
-        BranchID  uint   `json:"branch_id"`
-    }
+	var req struct {
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		TitleName string `json:"title_name"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Phone     string `json:"phone"`
+		Code      string `json:"code"`
+		Year      uint   `json:"year"`
+		BranchID  uint   `json:"branch_id"`
+	}
 
-    // รับค่าจาก body
-    if err := ctx.BodyParser(&req); err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request payload"})
-    }
+	// รับค่าจาก body
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request payload"})
+	}
 
-    // แฮช password ก่อนเก็บ
-    hashedPassword, err := pkg.HashPassword(req.Password)
-    if err != nil {
-        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to hash password"})
-    }
+	// แฮช password ก่อนเก็บ
+	hashedPassword, err := pkg.HashPassword(req.Password)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to hash password"})
+	}
 
-    // เริ่มต้นธุรกรรม
-    tx := c.txManager.Begin()
-    defer func() {
-        if r := recover(); r != nil {
-            tx.Rollback()
-        } else {
-            if err := tx.Commit(); err != nil {
-                tx.Rollback()
-            }
-        }
-    }()
+	// เริ่มต้นธุรกรรม
+	tx := c.txManager.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		} else {
+			if err := tx.Commit(); err != nil {
+				tx.Rollback()
+			}
+		}
+	}()
 
-    // สร้าง user
-    user := &entities.User{
-        Email:    req.Email,
-        Password: hashedPassword,
-        Role:     "student",
-    }
+	// สร้าง user
+	user := &entities.User{
+		Email:    req.Email,
+		Password: hashedPassword,
+		Role:     "student",
+	}
 
-    // สร้าง student โดยตั้ง `UserID` ที่เชื่อมโยงกับ user ที่สร้างขึ้น
-    student := &entities.Student{
-        TitleName: req.TitleName,
-        FirstName: req.FirstName,
-        LastName:  req.LastName,
-        Phone:     req.Phone,
-        Code:      req.Code,
-        Year:      req.Year,
-        BranchID:  req.BranchID,
-        UserID:    user.UserID, // ระบุ `UserID` จาก `user`
-    }
+	// สร้าง student โดยตั้ง `UserID` ที่เชื่อมโยงกับ user ที่สร้างขึ้น
+	student := &entities.Student{
+		TitleName: req.TitleName,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Phone:     req.Phone,
+		Code:      req.Code,
+		Year:      req.Year,
+		BranchID:  req.BranchID,
+		UserID:    user.UserID, // ระบุ `UserID` จาก `user`
+	}
 
-    // เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
-    if err := c.userUsecase.RegisterUserAndStudent(tx, user, student); err != nil {
-        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and student"})
-    }
+	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
+	if err := c.userUsecase.RegisterUserAndStudent(tx, user, student); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and student"})
+	}
 
-    // ยืนยันธุรกรรม
-    return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Student registered successfully"})
+	// ยืนยันธุรกรรม
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Student registered successfully"})
 }
 
 func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
-    var req struct {
-        Email     string `json:"email"`
-        Password  string `json:"password"`
-        TitleName string `json:"title_name"`
-        FirstName string `json:"first_name"`
-        LastName  string `json:"last_name"`
-        Phone     string `json:"phone"`
-        Code      string `json:"code"`
-        Role      string `json:"role"`
-    }
+	var req struct {
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		TitleName string `json:"title_name"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Phone     string `json:"phone"`
+		Code      string `json:"code"`
+		Role      string `json:"role"`
+	}
 
-    // รับค่าจาก body
-    if err := ctx.BodyParser(&req); err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request payload"})
-    }
+	// รับค่าจาก body
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request payload"})
+	}
 
-    // แฮช password ก่อนเก็บ โดยใช้ฟังก์ชันของคุณ
-    hashedPassword, err := pkg.HashPassword(req.Password)
-    if err != nil {
-        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to hash password"})
-    }
+	// แฮช password ก่อนเก็บ โดยใช้ฟังก์ชันของคุณ
+	hashedPassword, err := pkg.HashPassword(req.Password)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to hash password"})
+	}
 
-    // เริ่มต้นธุรกรรม
-    tx := c.txManager.Begin()
-    defer func() {
-        if r := recover(); r != nil {
-            tx.Rollback() // ใช้ rollback เมื่อเกิดข้อผิดพลาด
-        } else {
-            if err := tx.Commit(); err != nil {
-                tx.Rollback() // ใช้ rollback เมื่อ commit ล้มเหลว
-            }
-        }
-    }()
-    // กำหนด Role ให้เป็น "teacher" หากไม่มีการส่งค่ามา
-    if req.Role == "" {
-        req.Role = "teacher"
-    }
+	// เริ่มต้นธุรกรรม
+	tx := c.txManager.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback() // ใช้ rollback เมื่อเกิดข้อผิดพลาด
+		} else {
+			if err := tx.Commit(); err != nil {
+				tx.Rollback() // ใช้ rollback เมื่อ commit ล้มเหลว
+			}
+		}
+	}()
+	// กำหนด Role ให้เป็น "teacher" หากไม่มีการส่งค่ามา
+	if req.Role == "" {
+		req.Role = "teacher"
+	}
 
-    // สร้าง User entity
-    user := &entities.User{
-        Email:    req.Email,
-        Password: hashedPassword,
-        Role:     req.Role,
-    }
+	// สร้าง User entity
+	user := &entities.User{
+		Email:    req.Email,
+		Password: hashedPassword,
+		Role:     req.Role,
+	}
 
-    // สร้าง teacher
-    teacher := &entities.Teacher{
-        TitleName: req.TitleName,
-        FirstName: req.FirstName,
-        LastName:  req.LastName,
-        Phone:     req.Phone,
-        Code:      req.Code,
-    }
+	// สร้าง teacher
+	teacher := &entities.Teacher{
+		TitleName: req.TitleName,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Phone:     req.Phone,
+		Code:      req.Code,
+	}
 
-    // เรียกใช้ UserUsecase เพื่อสร้าง User และ Teacher พร้อมกัน
-    if err := c.userUsecase.RegisterUserAndTeacher(tx, user, teacher); err != nil {
-        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and teacher"})
-    }
+	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Teacher พร้อมกัน
+	if err := c.userUsecase.RegisterUserAndTeacher(tx, user, teacher); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and teacher"})
+	}
 
-    // ส่งผลลัพธ์สำเร็จ
-    return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
+	// ส่งผลลัพธ์สำเร็จ
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
 }
 
 func (c *UserController) Login(ctx *fiber.Ctx) error {
@@ -188,12 +189,12 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 
 	// Set JWT token as a cookie
 	ctx.Cookie(&fiber.Cookie{
-		Name:     "token",                          // ชื่อคุกกี้
-		Value:    token,                            // ค่า JWT
-		Expires:  time.Now().Add(24 * time.Hour),   // วันหมดอายุ (24 ชั่วโมง)
-		HTTPOnly: false,                            // ป้องกันการเข้าถึงผ่าน JavaScript
-		Secure:   false,                            // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
-		SameSite: "Lax",                            // นโยบาย SameSite
+		Name:     "token",                        // ชื่อคุกกี้
+		Value:    token,                          // ค่า JWT
+		Expires:  time.Now().Add(24 * time.Hour), // วันหมดอายุ (24 ชั่วโมง)
+		HTTPOnly: false,                          // ป้องกันการเข้าถึงผ่าน JavaScript
+		Secure:   false,                          // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
+		SameSite: "Lax",                          // นโยบาย SameSite
 	})
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -203,168 +204,233 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 }
 
 func (c *UserController) GetUserByClaims(ctx *fiber.Ctx) error {
-    // ดึง claims จาก context
-    claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
-    if !ok {
-        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "error": "Invalid claims",
-        })
-    }
+	// ดึง claims จาก context
+	claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid claims",
+		})
+	}
 
-    // ดึง user_id จาก claims
-    userIDFloat, ok := claims["user_id"].(float64)
-    if !ok {
-        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "error": "Invalid user_id in claims",
-        })
-    }
-    userID := uint(userIDFloat)
+	// ดึง user_id จาก claims
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id in claims",
+		})
+	}
+	userID := uint(userIDFloat)
 
-    // ตรวจสอบ role จาก claims
-    role := claims["role"]
-    
-    // ใช้ if-else เพื่อตรวจสอบ role
-    if role == "student" {
-        // ถ้า role เป็น "student"
-        student, err := c.userUsecase.GetStudentByUserID(userID)
-        if err != nil {
-            return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-                "error": "Failed to retrieve student data",
-            })
-        }
-        return ctx.Status(fiber.StatusOK).JSON(student)
-        
-    } else if role == "teacher" || role == "admin" {
-        // ถ้า role เป็น "teacher"
-        teacher, err := c.userUsecase.GetTeacherByUserID(userID)
-        if err != nil {
-            return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-                "error": "Failed to retrieve teacher data",
-            })
-        }
-        return ctx.Status(fiber.StatusOK).JSON(teacher)
-    
-    } else {
-        return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-            "error": "Unauthorized access",
-        })
-    }
+	// ตรวจสอบ role จาก claims
+	role := claims["role"]
+
+	// ใช้ if-else เพื่อตรวจสอบ role
+	if role == "student" {
+		// ถ้า role เป็น "student"
+		student, err := c.userUsecase.GetStudentByUserID(userID)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to retrieve student data",
+			})
+		}
+		return ctx.Status(fiber.StatusOK).JSON(student)
+
+	} else if role == "teacher" || role == "admin" {
+		// ถ้า role เป็น "teacher"
+		teacher, err := c.userUsecase.GetTeacherByUserID(userID)
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to retrieve teacher data",
+			})
+		}
+		return ctx.Status(fiber.StatusOK).JSON(teacher)
+
+	} else {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Unauthorized access",
+		})
+	}
 }
 
-func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error{
-    var req struct {
-        // UserID    uint   `json:"user_id"`
-        TitleName string `json:"title_name"`
-        FirstName string `json:"first_name"`
-        LastName  string `json:"last_name"`
-        Phone     string `json:"phone"`
-        Code      string `json:"code"`
-        Year      uint   `json:"year"`
-        BranchID  uint   `json:"branch_id"`
-    }
-    // ดึง claims จาก context
-    claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
-    if !ok {
-        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "error": "Invalid claims",
-        })
-    }
-    userIDFloat, ok := claims["user_id"].(float64)
-    if !ok {
-        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "error": "Invalid user_id in claims",
-        })
-    }
-    userID := uint(userIDFloat)
+func (c *UserController) EditStudent(ctx *fiber.Ctx) error {
+	var req struct {
+		TitleName string `json:"title_name"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Phone     string `json:"phone"`
+		Code      string `json:"code"`
+		Year      uint   `json:"year"`
+		BranchID  uint   `json:"branch_id"`
+	}
+	// ดึง claims จาก context
+	claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid claims",
+		})
+	}
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id in claims",
+		})
+	}
+	userID := uint(userIDFloat)
 
-    if err := ctx.BodyParser(&req); err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid request payload",
-        })
-    }
-    student := &entities.Student{
-        TitleName: req.TitleName,
-        FirstName: req.FirstName,
-        LastName:  req.LastName,
-        Phone:     req.Phone,
-        Code:      req.Code,
-        Year:      req.Year,
-        BranchID:  req.BranchID,
-        UserID:    userID, 
-    }
-     // เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
-     if err := c.userUsecase.EditStudentByID(student); err != nil {
-        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to edit student"})
-    }
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request payload",
+		})
+	}
+	student := &entities.Student{
+		TitleName: req.TitleName,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Phone:     req.Phone,
+		Code:      req.Code,
+		Year:      req.Year,
+		BranchID:  req.BranchID,
+		UserID:    userID,
+	}
+	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
+	if err := c.userUsecase.EditStudentByID(student); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to edit student"})
+	}
 
-    return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-        "message": "Student edited successfully",
-    })
-
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Student edited successfully",
+	})
 }
-func (c *UserController) EditTeacherByID(ctx *fiber.Ctx) error{
-    var req struct {
-        TitleName string `json:"title_name"`
-        FirstName string `json:"first_name"`
-        LastName  string `json:"last_name"`
-        Phone     string `json:"phone"`
-        Code      string `json:"code"`
-    }
-    // ดึง claims จาก context
-    claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
-    if !ok {
-        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "error": "Invalid claims",
-        })
-    }
-    userIDFloat, ok := claims["user_id"].(float64)
-    if !ok {
-        return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "error": "Invalid user_id in claims",
-        })
-    }
-    userID := uint(userIDFloat)
+func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error {
+	var req struct {
+		UserID    uint   `json:"user_id"`
+		TitleName string `json:"title_name"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Phone     string `json:"phone"`
+		Code      string `json:"code"`
+		Year      uint   `json:"year"`
+		BranchID  uint   `json:"branch_id"`
+	}
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request payload",
+		})
+	}
+	student := &entities.Student{
+		TitleName: req.TitleName,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Phone:     req.Phone,
+		Code:      req.Code,
+		Year:      req.Year,
+		BranchID:  req.BranchID,
+		UserID:    req.UserID,
+	}
+	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
+	if err := c.userUsecase.EditStudentByID(student); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to edit student"})
+	}
 
-    if err := ctx.BodyParser(&req); err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid request payload",
-        })
-    }
-    teacher := &entities.Teacher{
-        TitleName: req.TitleName,
-        FirstName: req.FirstName,
-        LastName:  req.LastName,
-        Phone:     req.Phone,
-        Code:      req.Code,
-        UserID:    userID, 
-    }
-     // เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
-     if err := c.userUsecase.EditTeacherByID(teacher); err != nil {
-        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to edit teacher"})
-    }
-
-    return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-        "message": "Teacher edited successfully",
-    })
-
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Student edited successfully",
+	})
 }
 
-func (c *UserController) GetAllStudent(ctx *fiber.Ctx) error{
-    student,err := c.userUsecase.GetAllStudent()
-    if err != nil {
-        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "Unable to retrieve student",
-        })
-    }
-    return ctx.Status(fiber.StatusOK).JSON(student)
+func (c *UserController) EditTeacherByID(ctx *fiber.Ctx) error {
+	var req struct {
+		UserID    uint   `json:"user_id"`
+		TitleName string `json:"title_name"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Phone     string `json:"phone"`
+		Code      string `json:"code"`
+	}
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request payload",
+		})
+	}
+	teacher := &entities.Teacher{
+		TitleName: req.TitleName,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Phone:     req.Phone,
+		Code:      req.Code,
+		UserID:    req.UserID,
+	}
+	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
+	if err := c.userUsecase.EditTeacherByID(teacher); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to edit teacher"})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Teacher edited successfully",
+	})
 }
 
-func (c *UserController) GetAllTeacher(ctx *fiber.Ctx) error{
-    teacher,err := c.userUsecase.GetAllTeacher()
-    if err != nil {
-        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": "Unable to retrieve teacher",
-        })
-    }
-    return ctx.Status(fiber.StatusOK).JSON(teacher)
+func (c *UserController) EditTeacher(ctx *fiber.Ctx) error {
+	var req struct {
+		TitleName string `json:"title_name"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Phone     string `json:"phone"`
+		Code      string `json:"code"`
+	}
+	// ดึง claims จาก context
+	claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid claims",
+		})
+	}
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id in claims",
+		})
+	}
+	userID := uint(userIDFloat)
+
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request payload",
+		})
+	}
+	teacher := &entities.Teacher{
+		TitleName: req.TitleName,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Phone:     req.Phone,
+		Code:      req.Code,
+		UserID:    userID,
+	}
+	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
+	if err := c.userUsecase.EditTeacherByID(teacher); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to edit teacher"})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Teacher edited successfully",
+	})
+}
+
+func (c *UserController) GetAllStudent(ctx *fiber.Ctx) error {
+	student, err := c.userUsecase.GetAllStudent()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Unable to retrieve student",
+		})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(student)
+}
+
+func (c *UserController) GetAllTeacher(ctx *fiber.Ctx) error {
+	teacher, err := c.userUsecase.GetAllTeacher()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Unable to retrieve teacher",
+		})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(teacher)
 }

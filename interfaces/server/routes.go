@@ -42,8 +42,11 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 	// ดึงข้อมูลจาก claim  /protected
 	protected.Get("/userbyclaim", userController.GetUserByClaims)
-	student.Put("/editstudent", userController.EditStudentByID)
-	teacher.Put("/editteacher", userController.EditTeacherByID)
+	student.Put("/personalinfo", userController.EditStudent)
+	teacher.Put("/personalinfo", userController.EditTeacher)
+	admin.Put("/personalinfo", userController.EditTeacher)
+	admin.Put("/studentinfo", userController.EditStudentByID)
+	admin.Put("/teacherinfo", userController.EditTeacherByID)
 	// เส้นทางสำหรับการเพิ่มคณะ(admin) /protected/admin
 	admin.Post("/faculty", facultyController.AddFaculty)
 	// เส้นทางสำหรับการแก้ไขคณะ(admin) /protected/admin
@@ -65,6 +68,6 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	// แก้ไข (admin) /protected/admin
 	admin.Put("/branch/:id", branchController.UpdateBranch)
 	admin.Delete("/branch/:id", branchController.DeleteBranchByID)
-	admin.Get("/students",userController.GetAllStudent)
-	admin.Get("/teachers",userController.GetAllTeacher)
+	admin.Get("/students", userController.GetAllStudent)
+	admin.Get("/teachers", userController.GetAllTeacher)
 }
