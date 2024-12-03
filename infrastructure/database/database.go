@@ -41,6 +41,7 @@ func (m *mysqlDatabase) AutoMigrate() error {
         &entities.Student{},
         &entities.Teacher{},
         &entities.Event{},
+        &entities.Permission{},
         
     )
 }

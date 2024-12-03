@@ -272,7 +272,7 @@ func (c *UserController) EditStudent(ctx *fiber.Ctx) error {
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid user_id in claims",
+			"error": "Invalid userID in claims",
 		})
 	}
 	userID := uint(userIDFloat)

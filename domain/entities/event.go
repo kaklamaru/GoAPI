@@ -12,6 +12,11 @@ type Event struct {
 	Detail       string        `gorm:"not null" json:"detail"`
 	EventInsides []EventInside `gorm:"foreignKey:EventID"`
 	Teacher      Teacher       `gorm:"foreignKey:Creator;references:UserID"` // ความสัมพันธ์กับ Teacher
+	Permissions  []Permission  `gorm:"foreignKey:EventID"`   // สิทธิ์ในการเข้าร่วม event
+}
+type Permission struct {
+	EventID  uint `json:"event_id" gorm:"uniqueIndex:idx_event_branch"`
+	BranchID uint `json:"branch_id" gorm:"uniqueIndex:idx_event_branch"`
 }
 
 type EventInside struct {
@@ -35,7 +40,4 @@ type EventOutside struct {
 	Image1    string
 	Image2    string
 }
-type Permission struct {
-	EventID  uint `json:"event_id"`
-	BranchID uint `json:"branch_id"`
-}
+
