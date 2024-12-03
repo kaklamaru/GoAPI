@@ -11,6 +11,5 @@ type Branch struct {
     BranchName  string     `gorm:"not null" json:"branch_name"`
     Students    []Student  `gorm:"foreignKey:BranchID"`         // ความสัมพันธ์แบบ one-to-many
     FacultyID   uint       `gorm:"not null" json:"faculty_id"`  // Foreign key ที่เชื่อมกับ Faculty
-    Permissions  []Permission  `gorm:"foreignKey:BranchID"`
 }
 

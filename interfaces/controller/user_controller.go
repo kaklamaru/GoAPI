@@ -26,6 +26,23 @@ func NewUserController(userUsecase usecase.UserUsecase, txManager transaction.Tr
 	}
 }
 
+func (c *UserController) handleTransaction(ctx *fiber.Ctx, tx transaction.Transaction, fn func() error) error {
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		} else if err := tx.Commit(); err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := fn(); err != nil {
+		tx.Rollback()
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return nil
+}
+
 func (c *UserController) RegisterStudent(ctx *fiber.Ctx) error {
 	var req struct {
 		Email     string `json:"email"`
@@ -52,42 +69,29 @@ func (c *UserController) RegisterStudent(ctx *fiber.Ctx) error {
 
 	// เริ่มต้นธุรกรรม
 	tx := c.txManager.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		} else {
-			if err := tx.Commit(); err != nil {
-				tx.Rollback()
-			}
+	return c.handleTransaction(ctx, tx, func() error {
+		// สร้าง user และ student
+		user := &entities.User{
+			Email:    req.Email,
+			Password: hashedPassword,
+			Role:     "student",
 		}
-	}()
+		student := &entities.Student{
+			TitleName: req.TitleName,
+			FirstName: req.FirstName,
+			LastName:  req.LastName,
+			Phone:     req.Phone,
+			Code:      req.Code,
+			Year:      req.Year,
+			BranchID:  req.BranchID,
+			UserID:    user.UserID,
+		}
+		if err := c.userUsecase.RegisterUserAndStudent(tx, user, student); err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and student"})
+		}
+		return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
 
-	// สร้าง user
-	user := &entities.User{
-		Email:    req.Email,
-		Password: hashedPassword,
-		Role:     "student",
-	}
-
-	// สร้าง student โดยตั้ง `UserID` ที่เชื่อมโยงกับ user ที่สร้างขึ้น
-	student := &entities.Student{
-		TitleName: req.TitleName,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Phone:     req.Phone,
-		Code:      req.Code,
-		Year:      req.Year,
-		BranchID:  req.BranchID,
-		UserID:    user.UserID, // ระบุ `UserID` จาก `user`
-	}
-
-	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
-	if err := c.userUsecase.RegisterUserAndStudent(tx, user, student); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and student"})
-	}
-
-	// ยืนยันธุรกรรม
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Student registered successfully"})
+	})
 }
 
 func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
@@ -115,43 +119,31 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
 
 	// เริ่มต้นธุรกรรม
 	tx := c.txManager.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback() // ใช้ rollback เมื่อเกิดข้อผิดพลาด
-		} else {
-			if err := tx.Commit(); err != nil {
-				tx.Rollback() // ใช้ rollback เมื่อ commit ล้มเหลว
-			}
+	return c.handleTransaction(ctx, tx, func() error {
+		// กำหนด Role ให้เป็น "teacher" หากไม่มีการส่งค่ามา
+		if req.Role == "" {
+			req.Role = "teacher"
 		}
-	}()
-	// กำหนด Role ให้เป็น "teacher" หากไม่มีการส่งค่ามา
-	if req.Role == "" {
-		req.Role = "teacher"
-	}
+		user := &entities.User{
+			Email:    req.Email,
+			Password: hashedPassword,
+			Role:     req.Role,
+		}
+		// สร้าง teacher
+		teacher := &entities.Teacher{
+			TitleName: req.TitleName,
+			FirstName: req.FirstName,
+			LastName:  req.LastName,
+			Phone:     req.Phone,
+			Code:      req.Code,
+		}
+		// เรียกใช้ UserUsecase เพื่อสร้าง User และ Teacher พร้อมกัน
+		if err := c.userUsecase.RegisterUserAndTeacher(tx, user, teacher); err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and teacher"})
+		}
+		return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
+	})
 
-	// สร้าง User entity
-	user := &entities.User{
-		Email:    req.Email,
-		Password: hashedPassword,
-		Role:     req.Role,
-	}
-
-	// สร้าง teacher
-	teacher := &entities.Teacher{
-		TitleName: req.TitleName,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Phone:     req.Phone,
-		Code:      req.Code,
-	}
-
-	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Teacher พร้อมกัน
-	if err := c.userUsecase.RegisterUserAndTeacher(tx, user, teacher); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and teacher"})
-	}
-
-	// ส่งผลลัพธ์สำเร็จ
-	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
 }
 
 func (c *UserController) Login(ctx *fiber.Ctx) error {
@@ -187,7 +179,6 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Set JWT token as a cookie
 	ctx.Cookie(&fiber.Cookie{
 		Name:     "token",                        // ชื่อคุกกี้
 		Value:    token,                          // ค่า JWT
@@ -202,6 +193,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		"role":    user.Role,
 	})
 }
+
 
 func (c *UserController) GetUserByClaims(ctx *fiber.Ctx) error {
 	// ดึง claims จาก context

@@ -15,9 +15,12 @@ type Event struct {
 	Permissions  []Permission  `gorm:"foreignKey:EventID"`   // สิทธิ์ในการเข้าร่วม event
 }
 type Permission struct {
-	EventID  uint `json:"event_id" gorm:"uniqueIndex:idx_event_branch"`
-	BranchID uint `json:"branch_id" gorm:"uniqueIndex:idx_event_branch"`
+    EventID   uint   `json:"event_id" gorm:"primaryKey"`  // กำหนดให้ EventID เป็น Primary Key
+    BranchIDs string `json:"branch_ids" gorm:"type:text"` // เก็บ JSON string ของ BranchIDs
+    YearIDs   string `json:"year_ids" gorm:"type:text"`   // เก็บ JSON string ของ YearIDs
 }
+
+
 
 type EventInside struct {
 	EventID   uint
