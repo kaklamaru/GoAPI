@@ -15,11 +15,12 @@ type Event struct {
 	Permissions  []Permission  `gorm:"foreignKey:EventID"`   // สิทธิ์ในการเข้าร่วม event
 }
 type Permission struct {
-    EventID   uint   `json:"event_id" gorm:"primaryKey"`  // กำหนดให้ EventID เป็น Primary Key
-    BranchIDs string `json:"branch_ids" gorm:"type:text"` // เก็บ JSON string ของ BranchIDs
-    YearIDs   string `json:"year_ids" gorm:"type:text"`   // เก็บ JSON string ของ YearIDs
+    EventID       uint   `json:"event_id" gorm:"primaryKey"`
+    BranchIDs     string `json:"branch_ids" gorm:"type:text"`
+    YearIDs       string `json:"year_ids" gorm:"type:text"`
+    AllowAllBranch bool  `json:"allow_all_branch"`
+    AllowAllYear   bool  `json:"allow_all_year"`
 }
-
 
 
 type EventInside struct {
@@ -31,7 +32,7 @@ type EventInside struct {
 	Image1    string
 }
 type EventOutside struct {
-	EventID   uint `gorm:"primaryKey;autoIncrement" json:"evvent_id"`
+	EventID   uint `gorm:"primaryKey;autoIncrement" json:"event_id"`
 	UserID    uint
 	EventName string
 	StartDate string

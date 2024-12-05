@@ -1,11 +1,13 @@
 package database
 
 import (
-    "RESTAPI/config"
-    "RESTAPI/domain/entities"
-    "log"
-    "gorm.io/driver/mysql"
-    "gorm.io/gorm"
+	"RESTAPI/config"
+	"RESTAPI/domain/entities"
+	"fmt"
+	"log"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 // Interface สำหรับการเชื่อมต่อฐานข้อมูล
@@ -58,8 +60,7 @@ func SetupDatabase(cfg *config.Config) Database {
         log.Fatalf("failed to migrate database: %v", err)
     }
 
-    // เพิ่ม Trigger สำหรับ Students
-    db.GetDb().Exec(`
+    addTriggerIfNotExists(db, "before_insert_students", `
         CREATE TRIGGER before_insert_students
         BEFORE INSERT ON students
         FOR EACH ROW
@@ -72,7 +73,7 @@ func SetupDatabase(cfg *config.Config) Database {
     `)
 
     // เพิ่ม Trigger สำหรับ Teachers
-    db.GetDb().Exec(`
+    addTriggerIfNotExists(db, "before_insert_teachers", `
         CREATE TRIGGER before_insert_teachers
         BEFORE INSERT ON teachers
         FOR EACH ROW
@@ -88,5 +89,25 @@ func SetupDatabase(cfg *config.Config) Database {
     return db
 }
 
+// ฟังก์ชันเพื่อเพิ่ม Trigger ถ้ามันยังไม่มี
+func addTriggerIfNotExists(db Database, triggerName, triggerSQL string) {
+    var count int
+    // ตรวจสอบว่า trigger มีอยู่แล้วหรือไม่
+    query := fmt.Sprintf("SHOW TRIGGERS LIKE '%s'", triggerName)
+    err := db.GetDb().Raw(query).Scan(&count).Error
+    if err != nil {
+        log.Printf("Error checking trigger existence: %v", err)
+        return
+    }
 
-
+    if count == 0 {
+        // ถ้าไม่มี trigger นี้ก็สร้างใหม่
+        if err := db.GetDb().Exec(triggerSQL).Error; err != nil {
+            log.Printf("Failed to create trigger %s: %v", triggerName, err)
+        } else {
+            log.Printf("Trigger %s created successfully!", triggerName)
+        }
+    } else {
+        log.Printf("Trigger %s already exists, skipping creation.", triggerName)
+    }
+}

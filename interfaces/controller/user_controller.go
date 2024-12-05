@@ -6,10 +6,10 @@ import (
 	"RESTAPI/infrastructure/jwt"
 	"RESTAPI/pkg"
 	"RESTAPI/usecase"
+	"RESTAPI/utility"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	jwtpkg "github.com/golang-jwt/jwt/v5"
 )
 
 type UserController struct {
@@ -24,23 +24,6 @@ func NewUserController(userUsecase usecase.UserUsecase, txManager transaction.Tr
 		txManager:   txManager,
 		jwtService:  jwtService,
 	}
-}
-
-func (c *UserController) handleTransaction(ctx *fiber.Ctx, tx transaction.Transaction, fn func() error) error {
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		} else if err := tx.Commit(); err != nil {
-			tx.Rollback()
-		}
-	}()
-
-	if err := fn(); err != nil {
-		tx.Rollback()
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	return nil
 }
 
 func (c *UserController) RegisterStudent(ctx *fiber.Ctx) error {
@@ -69,7 +52,7 @@ func (c *UserController) RegisterStudent(ctx *fiber.Ctx) error {
 
 	// เริ่มต้นธุรกรรม
 	tx := c.txManager.Begin()
-	return c.handleTransaction(ctx, tx, func() error {
+	return utility.HandleTransaction(ctx, tx, func() error {
 		// สร้าง user และ student
 		user := &entities.User{
 			Email:    req.Email,
@@ -119,7 +102,7 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
 
 	// เริ่มต้นธุรกรรม
 	tx := c.txManager.Begin()
-	return c.handleTransaction(ctx, tx, func() error {
+	return utility.HandleTransaction(ctx, tx, func() error {
 		// กำหนด Role ให้เป็น "teacher" หากไม่มีการส่งค่ามา
 		if req.Role == "" {
 			req.Role = "teacher"
@@ -194,14 +177,11 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 	})
 }
 
-
 func (c *UserController) GetUserByClaims(ctx *fiber.Ctx) error {
 	// ดึง claims จาก context
-	claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
-	if !ok {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid claims",
-		})
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return err
 	}
 
 	// ดึง user_id จาก claims
@@ -254,12 +234,10 @@ func (c *UserController) EditStudent(ctx *fiber.Ctx) error {
 		Year      uint   `json:"year"`
 		BranchID  uint   `json:"branch_id"`
 	}
-	// ดึง claims จาก context
-	claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
-	if !ok {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid claims",
-		})
+
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return err
 	}
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
@@ -369,12 +347,9 @@ func (c *UserController) EditTeacher(ctx *fiber.Ctx) error {
 		Phone     string `json:"phone"`
 		Code      string `json:"code"`
 	}
-	// ดึง claims จาก context
-	claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
-	if !ok {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid claims",
-		})
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return err
 	}
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {

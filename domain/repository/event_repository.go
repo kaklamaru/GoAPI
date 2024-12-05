@@ -52,6 +52,12 @@ func (r *eventRepository) GetEventByID(id uint) (*entities.Event, error) {
 	return &event, nil
 }
 
+
+
+
+
+
+
 type PermissionRepository interface {
 	CreatePermission(tx transaction.Transaction, permission *entities.Permission) error
 	DeletePermission(eventID uint) error
@@ -66,6 +72,15 @@ func NewPermissionRepository(db *gorm.DB) PermissionRepository {
 
 func (r *permissionRepository) CreatePermission(tx transaction.Transaction, permission *entities.Permission) error {
     gormTx := tx.(*transaction.GormTransaction)
+
+    // ตรวจสอบและตั้งค่าของ AllowAllBranch และ AllowAllYear
+    if permission.AllowAllBranch {
+        permission.BranchIDs = "" // กำหนดเป็นค่าว่างหาก AllowAllBranch = true
+    }
+
+    if permission.AllowAllYear {
+        permission.YearIDs = "" // กำหนดเป็นค่าว่างหาก AllowAllYear = true
+    }
 
     // แปลงค่า BranchIDs และ YearIDs เป็น JSON string ก่อนที่จะบันทึก
     branchIDsJSON, err := json.Marshal(permission.BranchIDs)
@@ -87,6 +102,7 @@ func (r *permissionRepository) CreatePermission(tx transaction.Transaction, perm
 
     return nil
 }
+
 
 
 
