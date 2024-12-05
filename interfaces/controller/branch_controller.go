@@ -78,6 +78,17 @@ func (c *BranchController) GetBranchesByFaculty(ctx *fiber.Ctx) error{
 
 func (c *BranchController) UpdateBranch(ctx *fiber.Ctx) error{
 	branch := new(entities.Branch)
+    idstr := ctx.Params("id")
+    idint, err := strconv.Atoi(idstr)
+    if err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid id format",
+        })
+    }
+    id := uint(idint)
+
+    branch.BranchID=id
+
 	if err:=ctx.BodyParser(branch); err != nil {
 		return ctx.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 			"error": "Invalid request",

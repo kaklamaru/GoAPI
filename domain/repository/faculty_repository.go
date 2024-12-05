@@ -31,9 +31,19 @@ func (r *facultyRepository) CreateFaculty(faculty *entities.Faculty) error {
 }
 
 // UpdateFaculty แก้ไขข้อมูลคณะ
+// func (r *facultyRepository) UpdateFaculty(faculty *entities.Faculty) error {
+//     // ใช้ Model และ Updates เพื่ออัปเดตข้อมูลที่มีอยู่แล้ว
+//     if err := r.db.Model(&entities.Faculty{}).Where("faculty_id = ?", faculty.FacultyID).Updates(faculty).Error; err != nil {
+//         return err
+//     }
+//     return nil
+// }
+// UpdateFaculty แก้ไขข้อมูลคณะ
 func (r *facultyRepository) UpdateFaculty(faculty *entities.Faculty) error {
-	return r.db.Save(faculty).Error
+    // เรียกใช้ GORM เพื่ออัปเดตข้อมูลคณะ
+    return r.db.Save(faculty).Error
 }
+
 
 // GetAllFaculties แสดงข้อมูลคณะทั้งหมด
 func (r *facultyRepository) GetAllFaculties() ([]entities.Faculty, error) {

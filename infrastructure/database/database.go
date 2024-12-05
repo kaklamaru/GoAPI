@@ -36,17 +36,28 @@ func (m *mysqlDatabase) GetDb() *gorm.DB {
 
 // ฟังก์ชันสำหรับทำ AutoMigrate
 func (m *mysqlDatabase) AutoMigrate() error {
-    return m.Db.AutoMigrate(
-        &entities.User{},
-        &entities.Faculty{},
-        &entities.Branch{},
-        &entities.Student{},
-        &entities.Teacher{},
-        &entities.Event{},
-        &entities.Permission{},
-        
-    )
+    // Migrate Faculty table first
+    if err := m.Db.AutoMigrate(&entities.Faculty{}); err != nil {
+        return fmt.Errorf("failed to migrate Faculty: %w", err)
+    }
+
+    // Migrate Branch table after Faculty
+    if err := m.Db.AutoMigrate(&entities.Branch{}); err != nil {
+        return fmt.Errorf("failed to migrate Branch: %w", err)
+    }
+
+    // Migrate other tables as needed
+    if err := m.Db.AutoMigrate(&entities.User{}); err != nil {
+        return fmt.Errorf("failed to migrate User: %w", err)
+    }
+
+    if err := m.Db.AutoMigrate(&entities.Teacher{}); err != nil {
+        return fmt.Errorf("failed to migrate Teacher: %w", err)
+    }
+
+    return nil
 }
+
 
 // MYSQL
 func SetupDatabase(cfg *config.Config) Database {

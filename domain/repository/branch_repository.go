@@ -31,19 +31,26 @@ func (r *branchRepository) CreateBranch(branch *entities.Branch) error {
 
 func (r *branchRepository) GetAllBranches() ([]entities.Branch, error) {
 	var branches []entities.Branch
-	if err := r.db.Find(&branches).Error; err != nil {
+	if err := r.db.Preload("Faculty").Find(&branches).Error; err != nil {
 		return nil, err
 	}
 	return branches, nil
 }
 
+
 func (r *branchRepository) GetBranch(id uint) (*entities.Branch, error) {
-	var branch entities.Branch
-	if err := r.db.First(&branch, id).Error; err != nil {
-		return nil, err
-	}
-	return &branch, nil
+    var branch entities.Branch
+    // ดึงข้อมูล Branch พร้อมกับ Faculty ที่เกี่ยวข้อง
+    if err := r.db.Preload("Faculty").First(&branch, id).Error; err != nil {
+        return nil, err
+    }
+
+    return &branch, nil
 }
+
+
+
+
 
 func (r *branchRepository) UpdateBranch(branch *entities.Branch) error {
 	return r.db.Save(branch).Error

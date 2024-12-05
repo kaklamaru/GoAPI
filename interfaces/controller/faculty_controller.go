@@ -43,8 +43,18 @@ func (c *FacultyController) AddFaculty(ctx *fiber.Ctx) error {
 // UpdateFaculty ฟังก์ชันสำหรับแก้ไขข้อมูลคณะ
 func (c *FacultyController) UpdateFaculty(ctx *fiber.Ctx) error {
     // สร้างตัวแปรสำหรับเก็บข้อมูลคณะจาก request body
+
     faculty := new(entities.Faculty)
-    
+    idstr := ctx.Params("id")
+    idint, err := strconv.Atoi(idstr)
+    if err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid id format",
+        })
+    }
+    id := uint(idint)
+
+    faculty.FacultyID=id
     // ตรวจสอบข้อมูลที่รับมาว่าถูกต้องหรือไม่
     if err := ctx.BodyParser(faculty); err != nil {
         return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -87,7 +97,6 @@ func (c *FacultyController) GetFaculty(ctx *fiber.Ctx) error {
             "error": "Invalid id format",
         })
     }
-    // แปลง facultyID จาก int เป็น uint
     id := uint(idint)
     // เรียกใช้ usecase เพื่อดึงข้อมูลคณะตาม ID
     faculty, err := c.usecase.GetFaculty(id)
