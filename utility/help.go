@@ -1,6 +1,10 @@
 package utility
 
 import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -25,4 +29,40 @@ func GetClaimsFromContext(ctx *fiber.Ctx) (jwtservice.MapClaims, error) {
 		return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid claims")
 	}
 	return claims, nil
+}
+
+func GetUintID(ctx *fiber.Ctx) (uint, error) {
+    idStr := ctx.Params("id")
+    idInt, err := strconv.Atoi(idStr)
+    if err != nil {
+        return 0, fmt.Errorf("invalid id format")
+    }
+    return uint(idInt), nil
+}
+
+
+func DecodeIDs(dataStr string) ([]uint, error) {
+	var ids []uint
+
+	// เช็คว่าเป็น string ว่างหรือไม่ (หลังจาก Trim เครื่องหมาย escape ออก)
+	if strings.Trim(dataStr, "\"") == "" {
+		// ถ้าเป็น string ว่าง ให้ return slice ว่าง
+		fmt.Println("IDs: []") // กรณีที่เป็น string ว่าง
+		return ids, nil
+	}
+
+	// ถ้า string ไม่ว่างให้ Trim เครื่องหมายคำพูดที่ escape ออก
+	dataStr = strings.Trim(dataStr, "\"")
+
+	// แปลง string ที่เหลือเป็น []uint
+	if err := json.Unmarshal([]byte(dataStr), &ids); err != nil {
+		// ถ้าเกิดข้อผิดพลาดในการ decode
+		fmt.Println("Error decoding IDs:", err)
+		return nil, err
+	} else {
+		// ถอดค่ามาได้สำเร็จ
+		fmt.Println("Decoded IDs:", ids)
+	}
+
+	return ids, nil
 }

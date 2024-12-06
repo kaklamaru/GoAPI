@@ -11,15 +11,16 @@ type Event struct {
 	Limit        uint          `gorm:"not null" json:"limit"`
 	Detail       string        `gorm:"not null" json:"detail"`
 	EventInsides []EventInside `gorm:"foreignKey:EventID"`
-	Teacher      Teacher       `gorm:"foreignKey:Creator;references:UserID"` // ความสัมพันธ์กับ Teacher
-	Permissions  []Permission  `gorm:"foreignKey:EventID"`   // สิทธิ์ในการเข้าร่วม event
+	Teacher      Teacher       `gorm:"foreignKey:Creator;references:UserID" json:"teacher"`          // ความสัมพันธ์กับ Teacher
+	Permission   Permission    `gorm:"foreignKey:EventID;constraint:OnDelete:CASCADE;"` // เพิ่มความสัมพันธ์ 1:1
 }
+
 type Permission struct {
-    EventID       uint   `json:"event_id" gorm:"primaryKey"`
-    BranchIDs     string `json:"branch_ids" gorm:"type:text"`
-    YearIDs       string `json:"year_ids" gorm:"type:text"`
-    AllowAllBranch bool  `json:"allow_all_branch"`
-    AllowAllYear   bool  `json:"allow_all_year"`
+	EventID        uint    `gorm:"primaryKey" json:"event_id"` // Primary Key เชื่อมโยงกับ Event
+	BranchIDs      string  `gorm:"type:json" json:"branches"` 
+	Years          string  `gorm:"type:json" json:"years"`   
+	AllowAllBranch bool    `json:"allow_all_branch"`
+	AllowAllYear   bool    `json:"allow_all_year"`
 }
 
 
@@ -44,4 +45,3 @@ type EventOutside struct {
 	Image1    string
 	Image2    string
 }
-

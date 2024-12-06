@@ -4,7 +4,6 @@ import (
 	"RESTAPI/domain/entities"
 	"errors"
 	"fmt"
-
 	"gorm.io/gorm"
 )
 
@@ -49,9 +48,6 @@ func (r *branchRepository) GetBranch(id uint) (*entities.Branch, error) {
 }
 
 
-
-
-
 func (r *branchRepository) UpdateBranch(branch *entities.Branch) error {
 	return r.db.Save(branch).Error
 }
@@ -68,7 +64,6 @@ func (r *branchRepository) GetAllBranchesByFaculty(facultyId int) ([]entities.Br
 func (r *branchRepository) DeleteBranchByID(id uint) (*entities.Branch, error) {
 	branch := &entities.Branch{}
 
-	// ค้นหาข้อมูล branch ตาม id
 	if err := r.db.First(branch, "branch_id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("branch with ID %d not found", id)
@@ -81,6 +76,5 @@ func (r *branchRepository) DeleteBranchByID(id uint) (*entities.Branch, error) {
 		return nil, err
 	}
 
-	// ส่งคืน branch ที่ถูกลบ
 	return branch, nil
 }

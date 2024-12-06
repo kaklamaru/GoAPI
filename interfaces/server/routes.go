@@ -41,7 +41,6 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 	protected := app.Group("/protected", middleware.JWTMiddlewareFromCookie(jwtService))
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
-	teacheradmin := protected.Group("/teacheradmin", middleware.RoleMiddleware("teacher","admin"))
 	teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
 	student := protected.Group("/student", middleware.RoleMiddleware("student"))
 
@@ -68,7 +67,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin.Get("/teachers", userController.GetAllTeacher)
 
 	protected.Get("/events", eventController.GetAllEvent)
-	teacheradmin.Post("/event", eventController.CreateEvent)
+	protected.Post("/event", eventController.CreateEvent)
 	protected.Put("/event/:id", eventController.EditEvent)
 	protected.Get("/event/:id", eventController.GetEventByID)
 

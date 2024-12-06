@@ -83,7 +83,6 @@ func (c *FacultyController) GetAllFaculties(ctx *fiber.Ctx) error {
         })
     }
 
-    // ส่งคืนข้อมูลคณะทั้งหมดในรูปแบบ JSON
     return ctx.Status(fiber.StatusOK).JSON(faculties)
 }
 

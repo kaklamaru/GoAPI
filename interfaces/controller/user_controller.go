@@ -7,8 +7,8 @@ import (
 	"RESTAPI/pkg"
 	"RESTAPI/usecase"
 	"RESTAPI/utility"
-	"time"
 
+	"time"
 	"github.com/gofiber/fiber/v2"
 )
 

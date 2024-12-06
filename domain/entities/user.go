@@ -27,3 +27,4 @@ type Student struct {
     BranchID   uint   `gorm:"not null;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;references:BranchID" json:"branch_id"` // Foreign key ไปยัง Branch
 }
 
+

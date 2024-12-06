@@ -27,30 +27,31 @@ func NewEventUsecase(eventRepo repository.EventRepository, permissionRepo reposi
 	}
 }
 func (u *eventUsecase) CreateEventWithPermission(tx transaction.Transaction, event *entities.Event, permission *entities.Permission) error {
-	if err := u.eventRepo.CreateEvent(tx, event); err != nil {
-		tx.Rollback()
-		return err
-	}
+    if err := u.eventRepo.CreateEvent(tx, event); err != nil {
+        tx.Rollback()
+        return err
+    }
 
-	if event.EventID == 0 {
-		tx.Rollback()
-		return errors.New("failed to get valid EventID")
-	}
+    if event.EventID == 0 {
+        tx.Rollback()
+        return errors.New("failed to get valid EventID")
+    }
 
-	if permission != nil {
-		permission.EventID = event.EventID
-		if err := u.permissionRepo.CreatePermission(tx, permission); err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
+    if permission != nil {
+        permission.EventID = event.EventID
+        if err := u.permissionRepo.CreatePermission(tx, permission); err != nil {
+            tx.Rollback()
+            return err
+        }
+    }
 
-	if err := tx.Commit(); err != nil {
-		return err
-	}
+    if err := tx.Commit(); err != nil {
+        return err
+    }
 
-	return nil
+    return nil
 }
+
 
 func (u *eventUsecase) GetAllEvent() ([]entities.Event, error) {
 	return u.eventRepo.GetAllEvent()

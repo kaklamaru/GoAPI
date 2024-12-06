@@ -3,14 +3,13 @@ package controller
 import (
 	"RESTAPI/domain/entities"
 	"RESTAPI/domain/transaction"
+	"RESTAPI/usecase"
 	"encoding/json"
 
-	"RESTAPI/usecase"
-	"strconv"
-	"time"
 	"RESTAPI/utility"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
-	jwtpkg "github.com/golang-jwt/jwt/v5"
 )
 
 type EventController struct {
@@ -39,7 +38,7 @@ func (c *EventController) buildPermission(branches []uint, years []uint) (*entit
 		}
 		permission = &entities.Permission{
 			BranchIDs:      string(branchData),
-			YearIDs:        string(yearData),
+			Years:        string(yearData),
 			AllowAllBranch: false,
 			AllowAllYear:   false,
 		}
@@ -50,7 +49,7 @@ func (c *EventController) buildPermission(branches []uint, years []uint) (*entit
 		}
 		permission = &entities.Permission{
 			BranchIDs:      string(branchData),
-			YearIDs:        "",
+			Years:        "",
 			AllowAllBranch: false,
 			AllowAllYear:   true,
 		}
@@ -61,14 +60,14 @@ func (c *EventController) buildPermission(branches []uint, years []uint) (*entit
 		}
 		permission = &entities.Permission{
 			BranchIDs:      "",
-			YearIDs:        string(yearData),
+			Years:        string(yearData),
 			AllowAllBranch: true,
 			AllowAllYear:   false,
 		}
 	} else {
 		permission = &entities.Permission{
 			BranchIDs:      "",
-			YearIDs:        "",
+			Years:        "",
 			AllowAllBranch: true,
 			AllowAllYear:   true,
 		}
@@ -77,16 +76,18 @@ func (c *EventController) buildPermission(branches []uint, years []uint) (*entit
 	return permission, nil
 }
 
+
 func (c *EventController) CreateEvent(ctx *fiber.Ctx) error {
 	var req struct {
-		EventName   string `json:"event_name"`
-		StartDate   string `json:"start_date"` // This will be the date string
-		WorkingHour uint   `json:"working_hour"`
-		Limit       uint   `json:"limit"`
-		Detail      string `json:"detail"`
-		Branches    []uint `json:"branches"`
-		Years       []uint `json:"years"`
+		EventName   string  `json:"event_name"`
+		StartDate   string  `json:"start_date"`
+		WorkingHour uint    `json:"working_hour"`
+		Limit       uint    `json:"limit"`
+		Detail      string  `json:"detail"`
+		Branches    []uint  `json:"branches"`
+		Years       []uint  `json:"years"`
 	}
+
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
 		return err
@@ -118,7 +119,7 @@ func (c *EventController) CreateEvent(ctx *fiber.Ctx) error {
 		event := &entities.Event{
 			EventName:   req.EventName,
 			StartDate:   startDate,
-			Limit: req.Limit,
+			Limit:       req.Limit,
 			WorkingHour: req.WorkingHour,
 			Detail:      req.Detail,
 			Creator:     userID,
@@ -128,7 +129,7 @@ func (c *EventController) CreateEvent(ctx *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		
+
 		if err := c.usecase.CreateEventWithPermission(tx, event, permission); err != nil {
 			return err
 		}
@@ -140,25 +141,120 @@ func (c *EventController) CreateEvent(ctx *fiber.Ctx) error {
 	})
 }
 
-func (c *EventController) GetAllEvent(ctx *fiber.Ctx) error {
-	events, err := c.usecase.GetAllEvent()
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to retrieve events",
-		})
-	}
-	return ctx.Status(fiber.StatusOK).JSON(events)
+type EventResponse struct {
+    EventID     uint     `json:"event_id"`
+    EventName   string   `json:"event_name"`
+    Creator     uint     `json:"creator"`
+    StartDate   string   `json:"start_date"`
+    WorkingHour uint     `json:"working_hour"`
+    Limit       uint     `json:"limit"`
+    Detail      string   `json:"detail"`
+    Teacher     struct {
+        UserID    uint   `json:"user_id"`
+        TitleName string `json:"title_name"`
+        FirstName string `json:"first_name"`
+        LastName  string `json:"last_name"`
+        Phone     string `json:"phone"`
+        Code      string `json:"code"`
+    } `json:"teacher"`
+    Permission struct {
+        EventID        uint     `json:"event_id"`
+        Branches       []uint   `json:"branches"`
+        Years          []uint   `json:"years"`
+        AllowAllBranch bool     `json:"allow_all_branch"`
+        AllowAllYear   bool     `json:"allow_all_year"`
+    } `json:"permission"`
 }
 
+func (c *EventController) GetAllEvent(ctx *fiber.Ctx) error {
+    events, err := c.usecase.GetAllEvent()
+    if err != nil {
+        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Unable to retrieve events",
+        })
+    }
+
+    var res []EventResponse
+
+    // ใช้ฟังก์ชัน mapEventResponse เพื่อนำข้อมูลมา map
+    for _, event := range events {
+        mappedEvent, err := c.mapEventResponse(event)
+        if err != nil {
+            return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+                "error": "Error processing event data",
+            })
+        }
+        res = append(res, mappedEvent)
+    }
+
+    return ctx.Status(fiber.StatusOK).JSON(res)
+}
+
+// ฟังก์ชัน private สำหรับ map ข้อมูลของ event
+func (c *EventController) mapEventResponse(event entities.Event) (EventResponse, error) {
+    // แปลง BranchIDs จาก JSON string เป็น []uint
+    branches, err := utility.DecodeIDs(event.Permission.BranchIDs)
+    if err != nil {
+        return EventResponse{}, err // ส่ง error กลับถ้ามีปัญหา
+    }
+
+    // แปลง Years จาก JSON string เป็น []uint
+    years, err := utility.DecodeIDs(event.Permission.Years)
+    if err != nil {
+        return EventResponse{}, err // ส่ง error กลับถ้ามีปัญหา
+    }
+
+    // สร้างและ return struct ที่ map ข้อมูลทั้งหมด
+    return EventResponse{
+        EventID:     event.EventID,
+        EventName:   event.EventName,
+        Creator:     event.Creator,
+        StartDate:   event.StartDate.Format(time.RFC3339),
+        WorkingHour: event.WorkingHour,
+        Limit:       event.Limit,
+        Detail:      event.Detail,
+        Teacher: struct {
+            UserID    uint   `json:"user_id"`
+            TitleName string `json:"title_name"`
+            FirstName string `json:"first_name"`
+            LastName  string `json:"last_name"`
+            Phone     string `json:"phone"`
+            Code      string `json:"code"`
+        }{
+            UserID:    event.Teacher.UserID,
+            TitleName: event.Teacher.TitleName,
+            FirstName: event.Teacher.FirstName,
+            LastName:  event.Teacher.LastName,
+            Phone:     event.Teacher.Phone,
+            Code:      event.Teacher.Code,
+        },
+        Permission: struct {
+            EventID        uint     `json:"event_id"`
+            Branches       []uint   `json:"branches"`
+            Years          []uint   `json:"years"`
+            AllowAllBranch bool     `json:"allow_all_branch"`
+            AllowAllYear   bool     `json:"allow_all_year"`
+        }{
+            EventID:        event.Permission.EventID,
+            Branches:       branches,
+            Years:          years,
+            AllowAllBranch: event.Permission.AllowAllBranch,
+            AllowAllYear:   event.Permission.AllowAllYear,
+        },
+    }, nil
+}
+
+
+
+
 func (c *EventController) GetEventByID(ctx *fiber.Ctx) error {
-	idstr := ctx.Params("id")
-	idint, err := strconv.Atoi(idstr)
+	id, err := utility.GetUintID(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid id format",
+			"error": err.Error(),
 		})
 	}
-	id := uint(idint)
+
 	event, err := c.usecase.GetEventByID(id)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -169,21 +265,18 @@ func (c *EventController) GetEventByID(ctx *fiber.Ctx) error {
 }
 
 func (c *EventController) EditEvent(ctx *fiber.Ctx) error {
-	eventIDStr := ctx.Params("id")
-	eventID, err := strconv.Atoi(eventIDStr)
+	id, err := utility.GetUintID(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid event ID format",
+			"error": err.Error(),
 		})
 	}
 
-	// ดึง claims จาก JWT (เพื่อตรวจสอบ user_id)
-	claims, ok := ctx.Locals("claims").(jwtpkg.MapClaims)
-	if !ok {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid claims",
-		})
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return err
 	}
+
 	role := claims["role"]
 	if role != "teacher" && role != "admin" {
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -198,7 +291,7 @@ func (c *EventController) EditEvent(ctx *fiber.Ctx) error {
 	}
 	userID := uint(userIDFloat)
 
-	event, err := c.usecase.GetEventByID(uint(eventID))
+	event, err := c.usecase.GetEventByID(id)
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Event not found",
