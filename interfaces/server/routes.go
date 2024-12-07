@@ -31,8 +31,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	branchController := controller.NewBranchController(branchUsecase)
 
 	eventRepo := repository.NewEventRepository(db.GetDb())
-	permissionRepo := repository.NewPermissionRepository(db.GetDb())
-	eventUsecase := usecase.NewEventUsecase(eventRepo,permissionRepo)
+	eventUsecase := usecase.NewEventUsecase(eventRepo,branchRepo)
 	eventController := controller.NewEventController(eventUsecase,txManager)
 
 	app.Post("/register/student", userController.RegisterStudent)
@@ -66,9 +65,10 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin.Get("/students", userController.GetAllStudent)
 	admin.Get("/teachers", userController.GetAllTeacher)
 
-	protected.Get("/events", eventController.GetAllEvent)
 	protected.Post("/event", eventController.CreateEvent)
-	protected.Put("/event/:id", eventController.EditEvent)
+	protected.Get("/events", eventController.GetAllEvent)
 	protected.Get("/event/:id", eventController.GetEventByID)
+	protected.Put("/event/:id", eventController.EditEvent)
+	protected.Delete("/event/:id",eventController.DeleteEvent)
 
 }

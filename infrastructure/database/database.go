@@ -60,9 +60,6 @@ func (m *mysqlDatabase) AutoMigrate() error {
     if err := m.Db.AutoMigrate(&entities.Event{}); err != nil {
         return fmt.Errorf("failed to migrate Event: %w", err)
     }
-    if err := m.Db.AutoMigrate(&entities.Permission{}); err != nil {
-        return fmt.Errorf("failed to migrate Permission: %w", err)
-    }
 
     return nil
 }

@@ -14,6 +14,7 @@ type BranchRepository interface {
 	UpdateBranch(branch *entities.Branch) error
 	GetAllBranchesByFaculty(facultyId int) ([]entities.Branch, error)
 	DeleteBranchByID(id uint) (*entities.Branch, error)
+	BranchExists(id uint) (bool, error)
 }
 
 type branchRepository struct {
@@ -46,6 +47,20 @@ func (r *branchRepository) GetBranch(id uint) (*entities.Branch, error) {
 
     return &branch, nil
 }
+
+func (r *branchRepository) BranchExists(branchID uint) (bool, error) {
+    var branch entities.Branch
+    // ใช้ชื่อคอลัมน์ที่ถูกต้องใน WHERE
+    if err := r.db.Where("branch_id = ?", branchID).First(&branch).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return false, nil // ไม่พบ record
+        }
+        return false, err // เกิดข้อผิดพลาดอื่น ๆ
+    }
+    return true, nil // พบ record
+}
+
+
 
 
 func (r *branchRepository) UpdateBranch(branch *entities.Branch) error {
