@@ -40,7 +40,6 @@ func GetUintID(ctx *fiber.Ctx) (uint, error) {
     return uint(idInt), nil
 }
 
-
 func DecodeIDs(dataStr string) ([]uint, error) {
 	var ids []uint
 
@@ -66,3 +65,4 @@ func DecodeIDs(dataStr string) ([]uint, error) {
 
 	return ids, nil
 }
+

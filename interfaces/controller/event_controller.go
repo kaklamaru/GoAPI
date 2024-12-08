@@ -6,7 +6,7 @@ import (
 	"RESTAPI/usecase"
 	"encoding/json"
 	"fmt"
-	"time"
+	// "time"
 
 	"RESTAPI/utility"
 	// "time"
@@ -17,28 +17,6 @@ import (
 type EventController struct {
 	usecase   usecase.EventUsecase
 	txManager transaction.TransactionManager
-}
-
-type EventResponse struct {
-	EventID        uint   `json:"event_id"`
-	EventName      string `json:"event_name"`
-	Creator        uint   `json:"creator"`
-	StartDate      string `json:"start_date"`
-	WorkingHour    uint   `json:"working_hour"`
-	Limit          uint   `json:"limit"`
-	Detail         string `json:"detail"`
-	BranchIDs      []uint `json:"branches"`
-	Years          []uint `json:"years"`
-	AllowAllBranch bool   `json:"allow_all_branch"`
-	AllowAllYear   bool   `json:"allow_all_year"`
-	Teacher        struct {
-		UserID    uint   `json:"user_id"`
-		TitleName string `json:"title_name"`
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
-		Phone     string `json:"phone"`
-		Code      string `json:"code"`
-	} `json:"teacher"`
 }
 
 type Permission struct {
@@ -119,46 +97,6 @@ func (c *EventController) buildPermission(branches []uint, years []uint) (*Permi
 	return permission, nil
 }
 
-func mapEventResponse(event entities.Event) (EventResponse, error) {
-	branches, err := utility.DecodeIDs(event.BranchIDs)
-	if err != nil {
-		return EventResponse{}, err
-	}
-
-	years, err := utility.DecodeIDs(event.Years)
-	if err != nil {
-		return EventResponse{}, err
-	}
-
-	return EventResponse{
-		EventID:        event.EventID,
-		EventName:      event.EventName,
-		Creator:        event.Creator,
-		StartDate:      event.StartDate.Format(time.RFC3339),
-		WorkingHour:    event.WorkingHour,
-		Limit:          event.Limit,
-		Detail:         event.Detail,
-		BranchIDs:      branches,
-		Years:          years,
-		AllowAllBranch: event.AllowAllBranch,
-		AllowAllYear:   event.AllowAllYear,
-		Teacher: struct {
-			UserID    uint   `json:"user_id"`
-			TitleName string `json:"title_name"`
-			FirstName string `json:"first_name"`
-			LastName  string `json:"last_name"`
-			Phone     string `json:"phone"`
-			Code      string `json:"code"`
-		}{
-			UserID:    event.Teacher.UserID,
-			TitleName: event.Teacher.TitleName,
-			FirstName: event.Teacher.FirstName,
-			LastName:  event.Teacher.LastName,
-			Phone:     event.Teacher.Phone,
-			Code:      event.Teacher.Code,
-		},
-	}, nil
-}
 
 func (c *EventController) CreateEvent(ctx *fiber.Ctx) error {
 	var req struct {
@@ -231,18 +169,7 @@ func (c *EventController) GetAllEvent(ctx *fiber.Ctx) error {
 			"error": "Unable to retrieve events",
 		})
 	}
-	var res []EventResponse
-	for _, event := range events {
-		mappedEvent, err := mapEventResponse(event)
-		if err != nil {
-			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Error processing event data",
-			})
-		}
-		res = append(res, mappedEvent)
-	}
-
-	return ctx.Status(fiber.StatusOK).JSON(res)
+	return ctx.Status(fiber.StatusOK).JSON(events)
 }
 
 func (c *EventController) GetEventByID(ctx *fiber.Ctx) error {
@@ -258,14 +185,8 @@ func (c *EventController) GetEventByID(ctx *fiber.Ctx) error {
 			"error": "Failed to retrieve event",
 		})
 	}
-	mappedEvent, err := mapEventResponse(*event)
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Error processing event data",
-		})
-	}
 
-	return ctx.Status(fiber.StatusOK).JSON(mappedEvent)
+	return ctx.Status(fiber.StatusOK).JSON(event)
 }
 
 func (c *EventController) EditEvent(ctx *fiber.Ctx) error {
@@ -327,31 +248,30 @@ func (c *EventController) EditEvent(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// แปลง startDate ให้เป็นวันที่
 	startDate, err := utility.ParseStartDate(req.StartDate)
 	if err != nil {
 		return err
 	}
 
-	// สร้าง permission ตามที่ได้รับจาก request
 	permission, err := c.buildPermission(req.Branches, req.Years)
 	if err != nil {
 		return err
 	}
+	var eventEdit entities.Event
 
-	// อัปเดตค่า event
-	event.EventName = req.EventName
-	event.StartDate = startDate
-	event.Limit = req.Limit
-	event.WorkingHour = req.WorkingHour
-	event.Detail = req.Detail
-	event.BranchIDs = permission.BranchIDs
-	event.Years = permission.Years
-	event.AllowAllBranch = permission.AllowAllBranch
-	event.AllowAllYear = permission.AllowAllYear
+	eventEdit.EventID = event.EventID
+	eventEdit.EventName = req.EventName
+	eventEdit.StartDate = startDate
+	eventEdit.Limit = req.Limit
+	eventEdit.WorkingHour = req.WorkingHour
+	eventEdit.Detail = req.Detail
+	eventEdit.BranchIDs = permission.BranchIDs
+	eventEdit.Years = permission.Years
+	eventEdit.AllowAllBranch = permission.AllowAllBranch
+	eventEdit.AllowAllYear = permission.AllowAllYear
 
 	// เรียกใช้ usecase เพื่ออัปเดต event
-	if err := c.usecase.EditEvent(event); err != nil {
+	if err := c.usecase.EditEvent(&eventEdit); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Unable to update event",
 		})
