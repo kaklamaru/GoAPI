@@ -50,9 +50,7 @@ func (u *eventUsecase) GetAllEvent() ([]entities.EventResponse, error) {
 	return res, nil
 }
 
-// func (u *eventUsecase) GetEventByID(id uint) (*entities.Event, error) {
-// 	return u.eventRepo.GetEventByID(id)
-// }
+
 func (u *eventUsecase) GetEventByID(id uint) (*entities.EventResponse, error) {
 	event, err := u.eventRepo.GetEventByID(id)
 	if err != nil {

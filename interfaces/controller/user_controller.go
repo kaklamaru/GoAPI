@@ -66,7 +66,7 @@ func (c *UserController) RegisterStudent(ctx *fiber.Ctx) error {
 			Phone:     req.Phone,
 			Code:      req.Code,
 			Year:      req.Year,
-			BranchID:  req.BranchID,
+			BranchId:  req.BranchID,
 			UserID:    user.UserID,
 		}
 		if err := c.userUsecase.RegisterUserAndStudent(tx, user, student); err != nil {
@@ -259,7 +259,7 @@ func (c *UserController) EditStudent(ctx *fiber.Ctx) error {
 		Phone:     req.Phone,
 		Code:      req.Code,
 		Year:      req.Year,
-		BranchID:  req.BranchID,
+		BranchId:  req.BranchID,
 		UserID:    userID,
 	}
 	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
@@ -294,7 +294,7 @@ func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error {
 		Phone:     req.Phone,
 		Code:      req.Code,
 		Year:      req.Year,
-		BranchID:  req.BranchID,
+		BranchId:  req.BranchID,
 		UserID:    req.UserID,
 	}
 	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
