@@ -4,22 +4,25 @@ import (
 	"RESTAPI/domain/entities"
 	"RESTAPI/usecase"
 	"RESTAPI/utility"
-	"fmt"
+	// "fmt"
+	// "time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type EventInsideController struct {
-	usecase      usecase.EventInsideUsecase
-	eventusecase usecase.EventUsecase
-	userUsecase  usecase.UserUsecase
+	insideUsecase usecase.EventInsideUsecase
+	eventUsecase  usecase.EventUsecase
+	userUsecase   usecase.UserUsecase
 }
 
-func NewEventInsideController(usecase usecase.EventInsideUsecase, eventusecase usecase.EventUsecase, userUsecase usecase.UserUsecase) *EventInsideController {
+func NewEventInsideController(insideUsecase usecase.EventInsideUsecase, 
+	eventUsecase usecase.EventUsecase, 
+	userUsecase usecase.UserUsecase) *EventInsideController {
 	return &EventInsideController{
-		usecase:      usecase,
-		eventusecase: eventusecase,
-		userUsecase: userUsecase,
+		insideUsecase: insideUsecase,
+		eventUsecase:  eventUsecase,
+		userUsecase:   userUsecase,
 	}
 }
 
@@ -27,7 +30,6 @@ func checkPermission(permission *entities.EventResponse, user *entities.Student)
 	if permission == nil || user == nil {
 		return false
 	}
-	fmt.Print(permission.AllowAllBranch)
 	permissionBranch := permission.AllowAllBranch
 	permissionYear := permission.AllowAllYear
 
@@ -51,7 +53,6 @@ func checkPermission(permission *entities.EventResponse, user *entities.Student)
 
 	return permissionBranch && permissionYear
 }
-
 
 func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
 	id, err := utility.GetUintID(ctx)
@@ -83,10 +84,16 @@ func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
 		})
 	}
 
-	event, err := c.eventusecase.GetEventByID(id)
+	event, err := c.eventUsecase.GetEventByID(id)
 	if err != nil || event == nil {
 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Event not found",
+		})
+	}
+
+	if event.FreeSpace == 0 {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "The event is full. Cannot join.",
 		})
 	}
 
@@ -103,7 +110,7 @@ func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
 		Certifier: event.Creator,
 	}
 
-	if err := c.usecase.CreateEventInside(eventInside); err != nil {
+	if err := c.insideUsecase.JoinEventInside(eventInside); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to join event",
 		})
@@ -114,4 +121,69 @@ func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
 	})
 }
 
+func (c *EventInsideController) UnJoinEventInside(ctx *fiber.Ctx) error {
+	id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid event ID",
+		})
+	}
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Failed to get user claims",
+		})
+	}
 
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id in claims",
+		})
+	}
+	userID := uint(userIDFloat)
+
+	if err := c.insideUsecase.UnJoinEventInside(id, userID); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Faild to Unjoin event",
+		})
+	}
+
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "UnJoined event successfully",
+	})
+}
+
+func (c *EventInsideController) ConfirmAndCheck(ctx *fiber.Ctx) error {
+	var req struct {
+		EventID uint   `json:"event_id"`
+		UserID  uint   `json:"user_id"`
+		Status  bool   `json:"status"`
+		Comment string `json:"comment"`
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(req)
+
+}
+
+func (c *EventInsideController) CountEventInside(ctx *fiber.Ctx) error {
+	id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid event ID",
+		})
+	}
+
+	count, err := c.insideUsecase.CountEventInside(id)
+	if err != nil {
+		return err
+	}
+
+	event, err := c.eventUsecase.GetEventByID(id)
+	if err != nil {
+		return err
+	}
+	freeSpace := event.Limit - count
+
+	return ctx.Status(fiber.StatusOK).JSON(freeSpace)
+}

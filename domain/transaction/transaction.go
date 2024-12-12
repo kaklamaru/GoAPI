@@ -2,15 +2,10 @@ package transaction
 
 import "gorm.io/gorm"
 
-// Transaction interface สำหรับจัดการธุรกรรม
 type Transaction interface {
     Commit() error
     Rollback() error
-}
-
-// TransactionManager interface สำหรับเริ่มต้นธุรกรรม
-type TransactionManager interface {
-    Begin() Transaction
+    GetDB() *gorm.DB
 }
 
 type GormTransaction struct {
@@ -25,9 +20,16 @@ func (t *GormTransaction) Rollback() error {
     return t.db.Rollback().Error
 }
 
-// เพิ่มฟังก์ชัน Getter เพื่อเข้าถึง DB
 func (t *GormTransaction) GetDB() *gorm.DB {
     return t.db
+}
+
+
+
+
+
+type TransactionManager interface {
+    Begin() Transaction
 }
 
 type GormTransactionManager struct {

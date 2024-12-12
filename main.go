@@ -18,7 +18,6 @@ func main() {
 	
 	jwtService := jwt.NewJWTService(cfg)
 	
-	// สร้างและเริ่มต้นเซิร์ฟเวอร์ Fiber โดยใช้ค่าคอนฟิกและฐานข้อมูล
 	// สร้าง instance ของ server
 	srv, err := server.NewServer(cfg, db ,jwtService)
 	if err != nil {

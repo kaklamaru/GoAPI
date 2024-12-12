@@ -4,7 +4,9 @@ import (
 	"RESTAPI/config"
 	"RESTAPI/infrastructure/database"
 	"RESTAPI/infrastructure/jwt"
+	// "RESTAPI/infrastructure/redis"
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -23,7 +25,7 @@ type fiberServer struct {
 }
 
 // NewServer ฟังก์ชันสำหรับสร้าง instance ของเซิร์ฟเวอร์ Fiber
-func NewServer(cfg *config.Config, db database.Database ,jwtService *jwt.JWTService) (Server, error) {
+func NewServer(cfg *config.Config, db database.Database ,jwtService *jwt.JWTService ) (Server, error) {
 	// ตรวจสอบค่าพอร์ต
 	if cfg.ServerPort == 0 {
 		return nil, fmt.Errorf("Server port not specified in config")

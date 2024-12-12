@@ -47,7 +47,6 @@ func (r *eventRepository) CreateEvent(event *entities.Event) error {
 
 func (r *eventRepository) GetAllEvent() ([]entities.Event, error) {
 	var events []entities.Event
-	// Preload Permission เพื่อดึงข้อมูล Permission พร้อมกับ Event
 	if err := r.db.Preload("Teacher").Find(&events).Error; err != nil {
 		return nil, err
 	}
@@ -75,7 +74,7 @@ func (r *eventRepository) EditEvent(event *entities.Event) error {
 	err = r.db.Model(&entities.Event{}).Where("event_id = ?", event.EventID).Updates(map[string]interface{}{
 		"event_name":       event.EventName,
 		"start_date":       event.StartDate,
-		"limit":            event.Limit,
+		"free_space":        event.FreeSpace,
 		"working_hour":     event.WorkingHour,
 		"detail":           event.Detail,
 		"branch_ids":         event.BranchIDs,
@@ -109,22 +108,27 @@ func (r *eventRepository) GetEventByID(id uint) (*entities.Event, error) {
 		return nil, fmt.Errorf("failed to retrieve event: %w", err)
 	}
 
-	// คืนค่าข้อมูล Event ที่พบ
 	return &event, nil
 }
 
 func (r *eventRepository) DeleteEvent(id uint) error {
-	// สร้างตัวแปรสำหรับ Event
 	event := &entities.Event{}
 
-	// ค้นหา Event ด้วย ID
 	if err := r.db.First(event, "event_id = ?", id).Error; err != nil {
 		// ถ้าไม่พบข้อมูล
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("event with ID %d not found", id)
 		}
-		// ถ้ามีข้อผิดพลาดอื่น ๆ
 		return fmt.Errorf("failed to find event: %w", err)
+	}
+
+	var eventInsideCount int64
+	if err := r.db.Model(&entities.EventInside{}).Where("event_id = ?", id).Count(&eventInsideCount).Error; err != nil {
+		return fmt.Errorf("failed to check event references: %w", err)
+	}
+
+	if eventInsideCount > 0 {
+		return fmt.Errorf("cannot delete event with ID %d because it is referenced in event_insides", id)
 	}
 
 	if err := r.db.Delete(event).Error; err != nil {
@@ -133,3 +137,4 @@ func (r *eventRepository) DeleteEvent(id uint) error {
 
 	return nil
 }
+

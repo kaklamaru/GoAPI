@@ -33,7 +33,7 @@ func NewUserUsecase(userRepo repository.UserRepository, studentRepo repository.S
 	}
 }
 
-func (u *userUsecase) registerUserAndEntity(tx transaction.Transaction, user *entities.User, entity interface{}, createEntityFunc func(tx transaction.Transaction, entity interface{}) error) error {
+func (u *userUsecase) registerUserAndEntity(tx transaction.Transaction,user *entities.User, entity interface{}, createEntityFunc func(tx transaction.Transaction, entity interface{}) error) error {
 	// สร้าง User
 	if err := u.userRepo.CreateUser(tx, user); err != nil {
 		tx.Rollback()
@@ -71,7 +71,7 @@ func (u *userUsecase) registerUserAndEntity(tx transaction.Transaction, user *en
 	return nil
 }
 
-func (u *userUsecase) RegisterUserAndStudent(tx transaction.Transaction, user *entities.User, student *entities.Student) error {
+func (u *userUsecase) RegisterUserAndStudent(tx transaction.Transaction,user *entities.User, student *entities.Student) error {
 	return u.registerUserAndEntity(tx, user, student, func(tx transaction.Transaction, entity interface{}) error {
 		return u.studentRepo.CreateStudent(tx, entity.(*entities.Student))
 	})

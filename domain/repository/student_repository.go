@@ -9,7 +9,7 @@ import (
 
 // Student Repository
 type StudentRepository interface {
-	CreateStudent(tx transaction.Transaction, student *entities.Student) error
+	CreateStudent(tx transaction.Transaction,student *entities.Student) error
 	EditStudentByID(student *entities.Student) error
 	GetAllStudent() ([]entities.Student, error)
 }
@@ -22,10 +22,10 @@ func NewStudentRepository(db *gorm.DB) *studentRepository {
 	return &studentRepository{db: db}
 }
 
-func (r *studentRepository) CreateStudent(tx transaction.Transaction, student *entities.Student) error {
+func (r *studentRepository) CreateStudent(tx transaction.Transaction,student *entities.Student) error {
 	gormTx := tx.(*transaction.GormTransaction)
 	if err := gormTx.GetDB().Create(student).Error; err != nil {
-		return err // ถ้ามีข้อผิดพลาดใน CreateStudent ให้ส่งกลับ
+		return err 
 	}
 	return nil
 }

@@ -14,7 +14,6 @@ import (
 
 // SetupRoutes ฟังก์ชันสำหรับกำหนดเส้นทางทั้งหมด
 func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTService) {
-
 	txManager := transaction.NewGormTransactionManager(db.GetDb())
 	userRepo := repository.NewUserRepository(db.GetDb())
 	studentRepo := repository.NewStudentRepository(db.GetDb())
@@ -31,11 +30,11 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	branchController := controller.NewBranchController(branchUsecase)
 
 	eventRepo := repository.NewEventRepository(db.GetDb())
-	eventUsecase := usecase.NewEventUsecase(eventRepo,branchRepo)
-	eventController := controller.NewEventController(eventUsecase,txManager)
-
+	
 	insideRepo := repository.NewEventInsideRepository(db.GetDb())
 	insideUsecase := usecase.NewEventInsideUsecase(insideRepo)
+	eventUsecase := usecase.NewEventUsecase(eventRepo,branchRepo,insideRepo)
+	eventController := controller.NewEventController(eventUsecase,txManager)
 	insideController := controller.NewEventInsideController(insideUsecase,eventUsecase,userUsecase)
 
 	app.Post("/register/student", userController.RegisterStudent)
@@ -46,7 +45,6 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
 	teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
 	student := protected.Group("/student", middleware.RoleMiddleware("student"))
-
 
 
 	protected.Get("/userbyclaim", userController.GetUserByClaims)
@@ -76,5 +74,6 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	protected.Delete("/event/:id",eventController.DeleteEvent)
 	
 	student.Post("/join/:id",insideController.JoinEvent)
-
+	student.Delete("/unjoin/:id",insideController.UnJoinEventInside)
+	protected.Get("/count/:id",insideController.CountEventInside)
 }
