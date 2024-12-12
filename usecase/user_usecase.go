@@ -34,7 +34,6 @@ func NewUserUsecase(userRepo repository.UserRepository, studentRepo repository.S
 }
 
 func (u *userUsecase) registerUserAndEntity(tx transaction.Transaction,user *entities.User, entity interface{}, createEntityFunc func(tx transaction.Transaction, entity interface{}) error) error {
-	// สร้าง User
 	if err := u.userRepo.CreateUser(tx, user); err != nil {
 		tx.Rollback()
 		return err

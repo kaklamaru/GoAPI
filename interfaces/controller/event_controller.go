@@ -160,7 +160,7 @@ func (c *EventController) DeleteEvent(ctx *fiber.Ctx) error {
 	if err := c.usecase.DeleteEvent(id, userID); err != nil {
 
         return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": err.Error(),  // ส่งข้อความ error ที่ได้จาก usecase
+            "error": err.Error(), 
         })
     }
 

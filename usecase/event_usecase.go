@@ -151,7 +151,6 @@ func (u *eventUsecase) GetAllEvent() ([]entities.EventResponse, error) {
 	}
 	var res []entities.EventResponse
 	for _, event := range events {
-		// แปลงข้อมูลแต่ละรายการ
 		count, err := u.insideRepo.CountEventInside(event.EventID)
 		if err != nil {
 			return nil, err
@@ -183,12 +182,11 @@ func (u *eventUsecase) EditEvent(ctx context.Context,eventID uint,req *EventRequ
         return fmt.Errorf("event not found")
     }
 
-    // ตรวจสอบว่า User มีสิทธิ์แก้ไข Event หรือไม่
     if event.Creator != userID {
         return fmt.Errorf("you do not have permission to edit this event")
     }
 
-    // แปลง StartDate
+
     startDate, err := utility.ParseStartDate(req.StartDate)
     if err != nil {
         return fmt.Errorf("invalid start date format")

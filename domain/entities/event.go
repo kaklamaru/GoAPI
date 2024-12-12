@@ -8,14 +8,16 @@ type Event struct {
 	Creator        uint      `gorm:"not null" json:"creator"`
 	StartDate      time.Time `gorm:"not null" json:"start_date"`
 	WorkingHour    uint      `gorm:"not null" json:"working_hour"`
-	FreeSpace      uint      `gorm:"not null" json:"free_space"` // ใช้แทน Limit
+	FreeSpace      uint      `gorm:"not null" json:"free_space"`
 	Detail         string    `json:"detail"`
 	BranchIDs      string    `gorm:"type:json" json:"branches"`
 	Years          string    `gorm:"type:json" json:"years"`
 	AllowAllBranch bool      `json:"allow_all_branch"`
 	AllowAllYear   bool      `json:"allow_all_year"`
+	Status         bool      `gorm:"default:true" json:"status"` 
 	Teacher        Teacher   `gorm:"foreignKey:Creator;references:UserID" json:"teacher"`
 }
+
 
 type EventInside struct {
 	EventId   uint    `gorm:"primaryKey" json:"event_id"`
@@ -56,6 +58,7 @@ type EventResponse struct {
 	Detail         string    `json:"detail"`
 	BranchIDs      []uint    `json:"branches"`
 	Years          []uint    `json:"years"`
+	Status         bool      `json:"status"` 
 	AllowAllBranch bool      `json:"allow_all_branch"`
 	AllowAllYear   bool      `json:"allow_all_year"`
 	Teacher        struct {

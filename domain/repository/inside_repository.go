@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type EventInsideRepository interface {
@@ -25,8 +26,50 @@ func NewEventInsideRepository(db *gorm.DB) EventInsideRepository {
 }
 
 func (r *eventInsideRepository) JoinEventInside(eventInside *entities.EventInside) error {
-	return r.db.Create(eventInside).Error
+    tx := r.db.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
+
+    // กำหนด Timeout ให้ Lock
+    if err := tx.Exec("SET innodb_lock_wait_timeout = 5").Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to set lock timeout: %w", err)
+    }
+
+    var event entities.Event
+    if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+        Where("event_id = ?", eventInside.EventId).
+        First(&event).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to fetch event: %w", err)
+    }
+
+    if event.FreeSpace <= 0 {
+        tx.Rollback()
+        return fmt.Errorf("no free space available for event")
+    }
+
+    event.FreeSpace -= 1
+    if err := tx.Save(&event).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to update event free space: %w", err)
+    }
+
+    if err := tx.Create(eventInside).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to create event inside record: %w", err)
+    }
+
+    if err := tx.Commit().Error; err != nil {
+        return fmt.Errorf("failed to commit transaction: %w", err)
+    }
+
+    return nil
 }
+
 
 func (r *eventInsideRepository) UnJoinEventInside(eventID uint, userID uint) error {
 	// ลบ Event ที่มี event_id และ user_id ตรงกัน

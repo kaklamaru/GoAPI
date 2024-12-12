@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type EventRepository interface {
@@ -15,6 +16,8 @@ type EventRepository interface {
 	EditEvent(event *entities.Event) error
 	GetEventByID(id uint) (*entities.Event, error)
 	DeleteEvent(id uint) error
+	UpdateEventStatusIfNoSpace() error
+	CanJoinEvent(eventID uint) (bool, error)
 }
 
 type eventRepository struct {
@@ -54,46 +57,68 @@ func (r *eventRepository) GetAllEvent() ([]entities.Event, error) {
 }
 
 func (r *eventRepository) EditEvent(event *entities.Event) error {
-	branchIDsJSON, err := json.Marshal(event.BranchIDs)
-	if err != nil {
-		return fmt.Errorf("failed to marshal branch IDs: %w", err)
-	}
+    tx := r.db.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
 
-	yearIDsJSON, err := json.Marshal(event.Years)
-	if err != nil {
-		return fmt.Errorf("failed to marshal year IDs: %w", err)
-	}
+    var currentEvent entities.Event
+    if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+        Where("event_id = ?", event.EventID).
+        First(&currentEvent).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to lock event: %w", err)
+    }
 
-	event.BranchIDs = string(branchIDsJSON)
-	event.Years = string(yearIDsJSON)
+    var joinedCount int64
+    if err := tx.Model(&entities.EventInside{}).
+        Where("event_id = ?", event.EventID).
+        Count(&joinedCount).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to count joined participants: %w", err)
+    }
 
-	if event.EventID == 0 {
-		return fmt.Errorf("event ID is missing")
-	}
+    if event.FreeSpace < uint(joinedCount)  {
+        tx.Rollback()
+        return fmt.Errorf("free space (%d) cannot be less than joined participants (%d)", event.FreeSpace, joinedCount)
+    }
 
-	err = r.db.Model(&entities.Event{}).Where("event_id = ?", event.EventID).Updates(map[string]interface{}{
-		"event_name":       event.EventName,
-		"start_date":       event.StartDate,
-		"free_space":        event.FreeSpace,
-		"working_hour":     event.WorkingHour,
-		"detail":           event.Detail,
-		"branch_ids":         event.BranchIDs,
-		"years":            event.Years,
-		"allow_all_branch": event.AllowAllBranch,
-		"allow_all_year":   event.AllowAllYear,
-	}).Error
-	if err != nil {
-		return fmt.Errorf("failed to update event: %w", err)
-	}
+    branchIDsJSON, err := json.Marshal(event.BranchIDs)
+    if err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to marshal branch IDs: %w", err)
+    }
+    yearIDsJSON, err := json.Marshal(event.Years)
+    if err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to marshal year IDs: %w", err)
+    }
 
-	// ตรวจสอบข้อมูลหลังการอัปเดต
-	var updatedEvent entities.Event
-	if err := r.db.Where("event_id = ?", event.EventID).First(&updatedEvent).Error; err != nil {
-		return fmt.Errorf("failed to fetch updated event: %w", err)
-	}
+    if err := tx.Model(&entities.Event{}).Where("event_id = ?", event.EventID).Updates(map[string]interface{}{
+        "event_name":       event.EventName,
+        "start_date":       event.StartDate,
+        "free_space":       event.FreeSpace,
+        "working_hour":     event.WorkingHour,
+        "detail":           event.Detail,
+        "branch_ids":       string(branchIDsJSON),
+        "years":            string(yearIDsJSON),
+        "allow_all_branch": event.AllowAllBranch,
+        "allow_all_year":   event.AllowAllYear,
+    }).Error; err != nil {
+        tx.Rollback()
+        return fmt.Errorf("failed to update event: %w", err)
+    }
 
-	return nil
+    if err := tx.Commit().Error; err != nil {
+        return fmt.Errorf("failed to commit transaction: %w", err)
+    }
+
+    return nil
 }
+
+
 
 func (r *eventRepository) GetEventByID(id uint) (*entities.Event, error) {
 	var event entities.Event
@@ -138,3 +163,21 @@ func (r *eventRepository) DeleteEvent(id uint) error {
 	return nil
 }
 
+func (r *eventRepository) UpdateEventStatusIfNoSpace() error {
+	err := r.db.Model(&entities.Event{}).
+		Where("free_space = ?", 0).
+		Update("status", false).Error
+
+	if err != nil {
+		return fmt.Errorf("failed to update event status: %w", err)
+	}
+	return nil
+}
+
+func (r *eventRepository) CanJoinEvent(eventID uint) (bool, error) {
+	var event entities.Event
+	if err := r.db.Where("event_id = ? AND status = ?", eventID, true).First(&event).Error; err != nil {
+		return false, fmt.Errorf("event not available: %w", err)
+	}
+	return true, nil
+}

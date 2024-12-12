@@ -1,6 +1,10 @@
 package transaction
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+
+	"gorm.io/gorm"
+)
 
 type Transaction interface {
     Commit() error
@@ -13,18 +17,23 @@ type GormTransaction struct {
 }
 
 func (t *GormTransaction) Commit() error {
+    if t.db == nil {
+        return fmt.Errorf("no active transaction")
+    }
     return t.db.Commit().Error
 }
 
 func (t *GormTransaction) Rollback() error {
+    if t.db == nil {
+        return fmt.Errorf("no active transaction")
+    }
     return t.db.Rollback().Error
 }
+
 
 func (t *GormTransaction) GetDB() *gorm.DB {
     return t.db
 }
-
-
 
 
 

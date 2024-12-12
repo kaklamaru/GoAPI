@@ -26,7 +26,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 func (r *userRepository) CreateUser(tx transaction.Transaction, user *entities.User) error {
 	gormTx := tx.(*transaction.GormTransaction)
 	if err := gormTx.GetDB().Create(user).Error; err != nil {
-		return err // ถ้ามีข้อผิดพลาดใน CreateUser ให้ส่งกลับ
+		return err 
 	}
 	return nil
 }
