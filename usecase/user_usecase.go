@@ -33,7 +33,8 @@ func NewUserUsecase(userRepo repository.UserRepository, studentRepo repository.S
 	}
 }
 
-func (u *userUsecase) registerUserAndEntity(tx transaction.Transaction,user *entities.User, entity interface{}, createEntityFunc func(tx transaction.Transaction, entity interface{}) error) error {
+func (u *userUsecase) registerUserAndEntity(tx transaction.Transaction, user *entities.User, entity interface{}, createEntityFunc func(tx transaction.Transaction, entity interface{}) error) error {
+	// สร้าง user
 	if err := u.userRepo.CreateUser(tx, user); err != nil {
 		tx.Rollback()
 		return err
@@ -70,8 +71,10 @@ func (u *userUsecase) registerUserAndEntity(tx transaction.Transaction,user *ent
 	return nil
 }
 
-func (u *userUsecase) RegisterUserAndStudent(tx transaction.Transaction,user *entities.User, student *entities.Student) error {
+func (u *userUsecase) RegisterUserAndStudent(tx transaction.Transaction, user *entities.User, student *entities.Student) error {
+	// เรียกใช้ registerUserAndEntity เพื่อสร้าง User และ Student
 	return u.registerUserAndEntity(tx, user, student, func(tx transaction.Transaction, entity interface{}) error {
+		// ฟังก์ชันที่ใช้สร้าง Student ใน repository
 		return u.studentRepo.CreateStudent(tx, entity.(*entities.Student))
 	})
 }

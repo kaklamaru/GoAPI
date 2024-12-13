@@ -29,6 +29,7 @@ func (r *studentRepository) CreateStudent(tx transaction.Transaction,student *en
 	}
 	return nil
 }
+
 func (r *userRepository) GetStudentByUserID(id uint) (*entities.Student, error) {
 	var student entities.Student
 	result := r.db.Where("user_id = ?", id).First(&student)

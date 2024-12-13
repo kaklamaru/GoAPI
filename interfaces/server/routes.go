@@ -19,7 +19,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	studentRepo := repository.NewStudentRepository(db.GetDb())
 	teacherRepo := repository.NewTeacherRepository(db.GetDb())
 	userUsecase := usecase.NewUserUsecase(userRepo, studentRepo, teacherRepo)
-	userController := controller.NewUserController(userUsecase, txManager, *jwtService)
+	userController := controller.NewUserController(userUsecase, *jwtService,txManager)
 
 	facultyRepo := repository.NewFacultyRepository(db.GetDb())
 	facultyUsecase := usecase.NewFacultyUsecase(facultyRepo)

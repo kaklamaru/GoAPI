@@ -9,20 +9,21 @@ import (
 	"RESTAPI/utility"
 
 	"time"
+
 	"github.com/gofiber/fiber/v2"
 )
 
 type UserController struct {
 	userUsecase usecase.UserUsecase
-	txManager   transaction.TransactionManager
 	jwtService  jwt.JWTService
+	txManager   transaction.TransactionManager
 }
 
-func NewUserController(userUsecase usecase.UserUsecase, txManager transaction.TransactionManager, jwtService jwt.JWTService) *UserController {
+func NewUserController(userUsecase usecase.UserUsecase,jwtService jwt.JWTService,txManager   transaction.TransactionManager) *UserController {
 	return &UserController{
 		userUsecase: userUsecase,
-		txManager:   txManager,
 		jwtService:  jwtService,
+		txManager: txManager,
 	}
 }
 
@@ -52,6 +53,7 @@ func (c *UserController) RegisterStudent(ctx *fiber.Ctx) error {
 
 	// เริ่มต้นธุรกรรม
 	tx := c.txManager.Begin()
+
 	return utility.HandleTransaction(ctx, tx, func() error {
 		// สร้าง user และ student
 		user := &entities.User{
@@ -67,15 +69,17 @@ func (c *UserController) RegisterStudent(ctx *fiber.Ctx) error {
 			Code:      req.Code,
 			Year:      req.Year,
 			BranchId:  req.BranchID,
-			UserID:    user.UserID,
 		}
+
+		// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
 		if err := c.userUsecase.RegisterUserAndStudent(tx, user, student); err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and student"})
 		}
-		return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
 
+		return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
 	})
 }
+
 
 func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
 	var req struct {
@@ -94,7 +98,7 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request payload"})
 	}
 
-	// แฮช password ก่อนเก็บ โดยใช้ฟังก์ชันของคุณ
+	// แฮช password ก่อนเก็บ
 	hashedPassword, err := pkg.HashPassword(req.Password)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to hash password"})
@@ -102,17 +106,18 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
 
 	// เริ่มต้นธุรกรรม
 	tx := c.txManager.Begin()
+
 	return utility.HandleTransaction(ctx, tx, func() error {
-		// กำหนด Role ให้เป็น "teacher" หากไม่มีการส่งค่ามา
 		if req.Role == "" {
 			req.Role = "teacher"
 		}
+
+		// สร้าง user และ teacher
 		user := &entities.User{
 			Email:    req.Email,
 			Password: hashedPassword,
 			Role:     req.Role,
 		}
-		// สร้าง teacher
 		teacher := &entities.Teacher{
 			TitleName: req.TitleName,
 			FirstName: req.FirstName,
@@ -120,14 +125,16 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
 			Phone:     req.Phone,
 			Code:      req.Code,
 		}
+
 		// เรียกใช้ UserUsecase เพื่อสร้าง User และ Teacher พร้อมกัน
 		if err := c.userUsecase.RegisterUserAndTeacher(tx, user, teacher); err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user and teacher"})
 		}
+
 		return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
 	})
-
 }
+
 
 func (c *UserController) Login(ctx *fiber.Ctx) error {
 	type loginRequest struct {

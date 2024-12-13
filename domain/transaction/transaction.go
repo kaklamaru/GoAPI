@@ -36,7 +36,6 @@ func (t *GormTransaction) GetDB() *gorm.DB {
 }
 
 
-
 type TransactionManager interface {
     Begin() Transaction
 }
@@ -49,6 +48,7 @@ func NewGormTransactionManager(db *gorm.DB) *GormTransactionManager {
     return &GormTransactionManager{db: db}
 }
 
+// Begin() จะเริ่มต้นธุรกรรมใหม่จาก Gorm DB
 func (tm *GormTransactionManager) Begin() Transaction {
     return &GormTransaction{db: tm.db.Begin()}
 }
