@@ -31,6 +31,14 @@ func GetClaimsFromContext(ctx *fiber.Ctx) (jwtservice.MapClaims, error) {
 	return claims, nil
 }
 
+func GetUserIDFromClaims(claims map[string]interface{}) (uint, bool) {
+	userIDFloat, ok := claims["user_id"].(float64) // JWT claims มักจะใช้ float64
+	if !ok {
+		return 0, false
+	}
+	return uint(userIDFloat), true
+}
+
 func GetUintID(ctx *fiber.Ctx) (uint, error) {
     idStr := ctx.Params("id")
     idInt, err := strconv.Atoi(idStr)

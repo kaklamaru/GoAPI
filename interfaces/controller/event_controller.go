@@ -1,8 +1,6 @@
 package controller
 
 import (
-	// "RESTAPI/domain/entities"
-	// "RESTAPI/domain/entities"
 	"RESTAPI/domain/transaction"
 	"RESTAPI/usecase"
 
@@ -28,26 +26,29 @@ func (c *EventController) CreateEvent(ctx *fiber.Ctx) error {
 
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid JWT claims"})
-	}
-
-	role, ok := claims["role"].(string)
-	if !ok || (role != "teacher" && role != "admin") {
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "You do not have permission to create an event"})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid JWT claims",
+		})
 	}
 
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
-		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user_id in claims"})
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id in claims",
+		})
 	}
 	userID := uint(userIDFloat)
 
 	if err := ctx.BodyParser(&req); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request payload"})
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request payload",
+		})
 	}
 
 	if err := c.usecase.CreateEvent(&req, userID); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
@@ -97,13 +98,6 @@ func (c *EventController) EditEvent(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	role := claims["role"]
-	if role != "teacher" && role != "admin" {
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "You do not have permission to create an event",
-		})
-	}
-
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -118,7 +112,7 @@ func (c *EventController) EditEvent(ctx *fiber.Ctx) error {
         })
     }
 
-    if err := c.usecase.EditEvent(ctx.Context(),id, &req ,userID); err != nil {
+    if err := c.usecase.EditEvent(id, &req ,userID); err != nil {
         return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "error": err.Error(),
         })
@@ -141,14 +135,6 @@ func (c *EventController) DeleteEvent(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
-	role := claims["role"]
-	if role != "teacher" && role != "admin" {
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "You do not have permission to create an event",
-		})
-	}
-
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -167,5 +153,38 @@ func (c *EventController) DeleteEvent(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"massage": "Event deleted successfully",
 	})
+}
 
+func (c *EventController) StatusEvent(ctx *fiber.Ctx) error {
+    id, err := utility.GetUintID(ctx)
+    if err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Invalid ID",
+        })
+    }
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id in claims",
+		})
+	}
+	userID := uint(userIDFloat)
+
+
+
+    if err := c.usecase.ToggleEventStatus(id,userID); err != nil {
+        return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Failed to toggle event status",
+        })
+    }
+
+    return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+        "message": "Event status toggled successfully",
+    })
 }

@@ -3,7 +3,8 @@ package controller
 import (
 	"RESTAPI/domain/entities"
 	"RESTAPI/usecase"
-	"strconv"
+	"RESTAPI/utility"
+
 	"github.com/gofiber/fiber/v2"
 )
 type BranchController struct{
@@ -40,14 +41,13 @@ func (c *BranchController) GetAllBranches(ctx *fiber.Ctx)error{
 }
 
 func (c *BranchController) GetBranch(ctx *fiber.Ctx) error{
-	idstr := ctx.Params("id")
-	idint, err := strconv.Atoi(idstr)
-    if err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid id format",
-        })
-    }
-    id := uint(idint)
+	id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
 	branch,err:= c.usecase.GetBranch(id)
 	if err != nil {
         return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -58,14 +58,13 @@ func (c *BranchController) GetBranch(ctx *fiber.Ctx) error{
     return ctx.Status(fiber.StatusOK).JSON(branch)
 }
 func (c *BranchController) GetBranchesByFaculty(ctx *fiber.Ctx) error{
-	idstr := ctx.Params("id")
-	idint, err := strconv.Atoi(idstr)
-    if err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid id format",
-        })
-    }
-    id := uint(idint)
+	id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
 	branch,err:= c.usecase.GetBranchesByFaculty(id)
 	if err != nil {
         return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -78,14 +77,12 @@ func (c *BranchController) GetBranchesByFaculty(ctx *fiber.Ctx) error{
 
 func (c *BranchController) UpdateBranch(ctx *fiber.Ctx) error{
 	branch := new(entities.Branch)
-    idstr := ctx.Params("id")
-    idint, err := strconv.Atoi(idstr)
-    if err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid id format",
-        })
-    }
-    id := uint(idint)
+    id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
 
     branch.BranchID=id
 
@@ -103,14 +100,12 @@ func (c *BranchController) UpdateBranch(ctx *fiber.Ctx) error{
 }
 
 func (c *BranchController) DeleteBranchByID(ctx *fiber.Ctx) error {
-    idstr := ctx.Params("id")
-	idint, err := strconv.Atoi(idstr)
-    if err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid id format",
-        })
-    }
-    id := uint(idint)
+    id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
 
     // เรียกใช้ usecase เพื่อลบ branch ตาม ID
     branch, err := c.usecase.DeleteBranchByID(id)

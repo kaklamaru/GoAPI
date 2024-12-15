@@ -4,19 +4,20 @@ import (
 	"RESTAPI/domain/entities"
 	"RESTAPI/domain/repository"
 	"RESTAPI/utility"
-	"context"
+
 	"encoding/json"
 	"fmt"
 )
 
 type EventUsecase interface {
-	CreateEvent(req *EventRequest, userID uint) error 
+	CreateEvent(req *EventRequest, userID uint) error
 	GetAllEvent() ([]entities.EventResponse, error)
-	EditEvent(ctx context.Context,eventID uint,req *EventRequest, userID uint) error
+	EditEvent(eventID uint, req *EventRequest, userID uint) error
 	GetEventByID(id uint) (*entities.EventResponse, error)
 	CheckBranch(branchID uint) (bool, error)
 	DeleteEvent(eventID uint, userID uint) error
 	buildPermission(branches []uint, years []uint) (*Permission, error)
+	ToggleEventStatus(eventID uint, userID uint) error
 }
 
 type Permission struct {
@@ -27,22 +28,21 @@ type Permission struct {
 }
 
 type EventRequest struct {
-    EventName   string `json:"event_name"`
-    StartDate   string `json:"start_date"`
-    WorkingHour uint   `json:"working_hour"`
-    FreeSpace   uint   `json:"free_space"`
-    Detail      string `json:"detail"`
-    Branches    []uint `json:"branches"`
-    Years       []uint `json:"years"`
+	EventName   string `json:"event_name"`
+	StartDate   string `json:"start_date"`
+	WorkingHour uint   `json:"working_hour"`
+	Location    string `json:"location"`
+	FreeSpace   uint   `json:"free_space"`
+	Detail      string `json:"detail"`
+	Branches    []uint `json:"branches"`
+	Years       []uint `json:"years"`
 }
-
 
 type eventUsecase struct {
 	eventRepo  repository.EventRepository
 	branchRepo repository.BranchRepository
 	insideRepo repository.EventInsideRepository
 }
-
 
 func NewEventUsecase(eventRepo repository.EventRepository, branchRepo repository.BranchRepository, insideRepo repository.EventInsideRepository) EventUsecase {
 	return &eventUsecase{
@@ -53,21 +53,13 @@ func NewEventUsecase(eventRepo repository.EventRepository, branchRepo repository
 }
 
 func (u *eventUsecase) buildPermission(branches []uint, years []uint) (*Permission, error) {
-	var permission *Permission
-
 	if len(branches) > 0 {
-		for _, branchID := range branches {
-			exists, err := u.branchRepo.BranchExists(branchID)
-			if err != nil {
-				return nil, fmt.Errorf("error checking branch: %v", err)
-			}
-			if !exists {
-				return nil, fmt.Errorf("branch with ID %d does not exist", branchID)
-			}
+		if err := u.validateBranches(branches); err != nil {
+			return nil, err
 		}
 	}
 
-	if len(branches) > 0 && len(years) > 0 {
+	createPermission := func(branches []uint, years []uint, allowAllBranch, allowAllYear bool) (*Permission, error) {
 		branchData, err := json.Marshal(branches)
 		if err != nil {
 			return nil, err
@@ -76,73 +68,68 @@ func (u *eventUsecase) buildPermission(branches []uint, years []uint) (*Permissi
 		if err != nil {
 			return nil, err
 		}
-		permission = &Permission{
+		return &Permission{
 			BranchIDs:      string(branchData),
 			Years:          string(yearData),
-			AllowAllBranch: false,
-			AllowAllYear:   false,
-		}
-	} else if len(branches) > 0 {
-		branchData, err := json.Marshal(branches)
-		if err != nil {
-			return nil, err
-		}
-		permission = &Permission{
-			BranchIDs:      string(branchData),
-			Years:          "",
-			AllowAllBranch: false,
-			AllowAllYear:   true,
-		}
-	} else if len(years) > 0 {
-		yearData, err := json.Marshal(years)
-		if err != nil {
-			return nil, err
-		}
-		permission = &Permission{
-			BranchIDs:      "",
-			Years:          string(yearData),
-			AllowAllBranch: true,
-			AllowAllYear:   false,
-		}
-	} else {
-		permission = &Permission{
-			BranchIDs:      "",
-			Years:          "",
-			AllowAllBranch: true,
-			AllowAllYear:   true,
-		}
+			AllowAllBranch: allowAllBranch,
+			AllowAllYear:   allowAllYear,
+		}, nil
 	}
 
-	return permission, nil
+	switch {
+	case len(branches) > 0 && len(years) > 0:
+		return createPermission(branches, years, false, false)
+	case len(branches) > 0:
+		return createPermission(branches, nil, false, true)
+	case len(years) > 0:
+		return createPermission(nil, years, true, false)
+	default:
+		return createPermission(nil, nil, true, true)
+	}
+}
+
+func (u *eventUsecase) validateBranches(branches []uint) error {
+	for _, branchID := range branches {
+		exists, err := u.branchRepo.BranchExists(branchID)
+		if err != nil {
+			return fmt.Errorf("error checking branch: %v", err)
+		}
+		if !exists {
+			return fmt.Errorf("branch with ID %d does not exist", branchID)
+		}
+	}
+	return nil
 }
 
 func (u *eventUsecase) CreateEvent(req *EventRequest, userID uint) error {
-    permission, err := u.buildPermission(req.Branches, req.Years)
-    if err != nil {
-        return err
-    }
-    startDate, err := utility.ParseStartDate(req.StartDate)
-    if err != nil {
-        return err
-    }
 
-    event := &entities.Event{
-        EventName:      req.EventName,
-        StartDate:      startDate,
-        FreeSpace:      req.FreeSpace,
-        WorkingHour:    req.WorkingHour,
-        Detail:         req.Detail,
-        Creator:        userID,
-        BranchIDs:      permission.BranchIDs,
-        Years:          permission.Years,
-        AllowAllBranch: permission.AllowAllBranch,
-        AllowAllYear:   permission.AllowAllYear,
-    }
 
-    return u.eventRepo.CreateEvent(event)
+	permission, err := u.buildPermission(req.Branches, req.Years)
+	if err != nil {
+		return err
+	}
+
+	startDate, err := utility.ParseStartDate(req.StartDate)
+	if err != nil {
+		return err
+	}
+
+	event := &entities.Event{
+		EventName:      req.EventName,
+		StartDate:      startDate,
+		FreeSpace:      req.FreeSpace,
+		WorkingHour:    req.WorkingHour,
+		Detail:         req.Detail,
+		Location:       req.Location,
+		Creator:        userID,
+		AllowAllBranch: permission.AllowAllBranch,
+		AllowAllYear:   permission.AllowAllYear,
+		BranchIDs:      permission.BranchIDs,
+		Years:          permission.Years,
+	}
+
+	return u.eventRepo.CreateEvent(event)
 }
-
-
 
 func (u *eventUsecase) GetAllEvent() ([]entities.EventResponse, error) {
 	events, err := u.eventRepo.GetAllEvent()
@@ -155,7 +142,7 @@ func (u *eventUsecase) GetAllEvent() ([]entities.EventResponse, error) {
 		if err != nil {
 			return nil, err
 		}
-		mappedEvent, err := mapEventResponse(event,count)
+		mappedEvent, err := mapEventResponse(event, count)
 		if err != nil {
 			return nil, err
 		}
@@ -176,59 +163,60 @@ func (u *eventUsecase) GetEventByID(id uint) (*entities.EventResponse, error) {
 	return mapEventResponse(*event, count)
 }
 
-func (u *eventUsecase) EditEvent(ctx context.Context,eventID uint,req *EventRequest, userID uint) error {
+func (u *eventUsecase) EditEvent(eventID uint, req *EventRequest, userID uint) error {
 	event, err := u.eventRepo.GetEventByID(eventID)
-    if err != nil {
-        return fmt.Errorf("event not found")
-    }
+	if err != nil {
+		return fmt.Errorf("event not found")
+	}
 
-    if event.Creator != userID {
-        return fmt.Errorf("you do not have permission to edit this event")
-    }
+	if event.Creator != userID {
+		return fmt.Errorf("you do not have permission to edit this event")
+	}
+
+	if event.FreeSpace == 0 {
+		event.Status = false
+	}
+
+	startDate, err := utility.ParseStartDate(req.StartDate)
+	if err != nil {
+		return fmt.Errorf("invalid start date format")
+	}
 
 
-    startDate, err := utility.ParseStartDate(req.StartDate)
-    if err != nil {
-        return fmt.Errorf("invalid start date format")
-    }
+	permission, err := u.buildPermission(req.Branches, req.Years)
+	if err != nil {
+		return fmt.Errorf("failed to build permissions: %w", err)
+	}
 
-    // สร้าง permission
-    permission, err := u.buildPermission(req.Branches, req.Years)
-    if err != nil {
-        return fmt.Errorf("failed to build permissions: %w", err)
-    }
-
-    event.EventName = req.EventName
-    event.StartDate = startDate
-    event.FreeSpace = req.FreeSpace
-    event.WorkingHour = req.WorkingHour
-    event.Detail = req.Detail
-    event.BranchIDs = permission.BranchIDs
-    event.Years = permission.Years
-    event.AllowAllBranch = permission.AllowAllBranch
-    event.AllowAllYear = permission.AllowAllYear
+	event.EventName = req.EventName
+	event.StartDate = startDate
+	event.FreeSpace = req.FreeSpace
+	event.WorkingHour = req.WorkingHour
+	event.Location = req.Location
+	event.Detail = req.Detail
+	event.BranchIDs = permission.BranchIDs
+	event.Years = permission.Years
+	event.AllowAllBranch = permission.AllowAllBranch
+	event.AllowAllYear = permission.AllowAllYear
 
 	return u.eventRepo.EditEvent(event)
 }
 
 func (u *eventUsecase) DeleteEvent(eventID uint, userID uint) error {
 	event, err := u.eventRepo.GetEventByID(eventID)
-    if err != nil {
-        return fmt.Errorf("event not found")
-    }
-    if event.Creator != userID {
-        return fmt.Errorf("you do not have permission to edit this event")
-    }
+	if err != nil {
+		return fmt.Errorf("event not found")
+	}
+	if event.Creator != userID {
+		return fmt.Errorf("you do not have permission to edit this event")
+	}
 
 	return u.eventRepo.DeleteEvent(event.EventID)
 }
 
-
-
 func (u *eventUsecase) CheckBranch(branchID uint) (bool, error) {
 	return u.branchRepo.BranchExists(branchID)
 }
-
 
 func mapEventResponse(event entities.Event, count uint) (*entities.EventResponse, error) {
 	branches, err := utility.DecodeIDs(event.BranchIDs)
@@ -245,17 +233,18 @@ func mapEventResponse(event entities.Event, count uint) (*entities.EventResponse
 	return &entities.EventResponse{
 		EventID:        event.EventID,
 		EventName:      event.EventName,
-		Creator:        event.Creator,
 		StartDate:      event.StartDate,
 		WorkingHour:    event.WorkingHour,
 		Limit:          limit,
 		FreeSpace:      event.FreeSpace,
 		Detail:         event.Detail,
+		Location:       event.Location,
 		BranchIDs:      branches,
+		Status:         event.Status,
 		Years:          years,
 		AllowAllBranch: event.AllowAllBranch,
 		AllowAllYear:   event.AllowAllYear,
-		Teacher: struct {
+		Creator: struct {
 			UserID    uint   `json:"user_id"`
 			TitleName string `json:"title_name"`
 			FirstName string `json:"first_name"`
@@ -271,4 +260,16 @@ func mapEventResponse(event entities.Event, count uint) (*entities.EventResponse
 			Code:      event.Teacher.Code,
 		},
 	}, nil
+}
+
+func (u *eventUsecase) ToggleEventStatus(eventID uint, userID uint) error {
+
+	event, err := u.eventRepo.GetEventByID(eventID)
+	if err != nil {
+		return fmt.Errorf("event not found")
+	}
+	if event.Creator != userID {
+		return fmt.Errorf("you do not have permission to edit this event")
+	}
+	return u.eventRepo.ToggleEventStatus(event.EventID)
 }

@@ -1,42 +1,159 @@
 package usecase
 
-import(
+import (
 	"RESTAPI/domain/entities"
 	"RESTAPI/domain/repository"
-
+	"RESTAPI/domain/transaction"
+	"fmt"
+	"mime/multipart"
+	"RESTAPI/interfaces/fileSystem"
 )
 
+
 type EventInsideUsecase interface{
-	JoinEventInside(eventInside *entities.EventInside) error
+	JoinEventInside(eventID uint, userID uint) error
 	UnJoinEventInside(eventID uint , userID uint) error
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
 	CountEventInside(eventID uint) (uint,error)
-
-	
+	UploadFile(file *multipart.FileHeader, eventID uint, userID uint) error 	
 }
 
 type eventInsideUsecase struct{
-	repo repository.EventInsideRepository
+	insideRepo repository.EventInsideRepository
+	userRepo repository.UserRepository
+	eventUsecase EventUsecase
+	txManager transaction.TransactionManager
+	
 }
 
-func NewEventInsideUsecase(repo repository.EventInsideRepository) EventInsideUsecase{
+func NewEventInsideUsecase(insideRepo repository.EventInsideRepository,userRepo repository.UserRepository,eventUsecase EventUsecase,txManager transaction.TransactionManager) EventInsideUsecase{
 	return &eventInsideUsecase{
-		repo: repo,
+		insideRepo: insideRepo,
+		userRepo: userRepo,
+		eventUsecase: eventUsecase,
+		txManager: txManager,
 	}
 }
 
-func (u *eventInsideUsecase) JoinEventInside(eventInside *entities.EventInside) error{
-	return u.repo.JoinEventInside(eventInside)
+func checkPermission(permission *entities.EventResponse, user *entities.Student) bool {
+	if permission == nil || user == nil {
+		return false
+	}
+	permissionBranch := permission.AllowAllBranch
+	permissionYear := permission.AllowAllYear
+
+	if !permissionBranch && permission.BranchIDs != nil {
+		for _, branch := range permission.BranchIDs {
+			if user.BranchId == branch {
+				permissionBranch = true
+				break
+			}
+		}
+	}
+
+	if !permissionYear && permission.Years != nil {
+		for _, year := range permission.Years {
+			if user.Year == year {
+				permissionYear = true
+				break
+			}
+		}
+	}
+
+	return permissionBranch && permissionYear
 }
 
-func (u *eventInsideUsecase) UnJoinEventInside(eventID uint , userID uint) error{
-	return u.repo.UnJoinEventInside(eventID,userID)
+func (u *eventInsideUsecase) JoinEventInside(eventID uint, userID uint) error {
+    student, err := u.userRepo.GetStudentByUserID(userID)
+    if err != nil || student == nil {
+        return fmt.Errorf("student not found")
+    }
+
+    event, err := u.eventUsecase.GetEventByID(eventID)
+    if err != nil || event == nil {
+        return fmt.Errorf("event not found")
+    }
+
+    if !event.Status {
+        return fmt.Errorf("event not allowed")
+    }
+
+    if event.FreeSpace == 0 {
+        return fmt.Errorf("the event is full")
+    }
+
+    if !checkPermission(event, student) {
+        return fmt.Errorf("user is not allowed to join this event")
+    }
+
+    eventInside := &entities.EventInside{
+        EventId:   eventID,
+        User:      userID,
+        Status:    false,
+        Certifier: event.Creator.UserID,
+    }
+
+    err = u.insideRepo.JoinEventInside(eventInside, u.txManager)
+    if err != nil {
+        return fmt.Errorf("failed to join event inside: %w", err)
+    }
+    return nil
 }
+
+func (u *eventInsideUsecase) UnJoinEventInside(eventID uint, userID uint) error {
+    // if eventID == 0 || userID == 0 {
+    //     return fmt.Errorf("invalid eventID or userID")
+    // }
+
+    student, err := u.userRepo.GetStudentByUserID(userID)
+    if err != nil || student == nil {
+        return fmt.Errorf("user not found or not a student")
+    }
+
+    event, err := u.eventUsecase.GetEventByID(eventID)
+    if err != nil || event == nil {
+        return fmt.Errorf("event not found")
+    }
+
+    isMember, err := u.insideRepo.IsUserJoinedEvent(eventID, userID)
+    if err != nil {
+        return fmt.Errorf("failed to verify user participation: %w", err)
+    }
+    if !isMember {
+        return fmt.Errorf("user is not a member of this event")
+    }
+
+    if err := u.insideRepo.UnJoinEventInside(eventID, userID, u.txManager); err != nil {
+        return fmt.Errorf("failed to unjoin event: %w", err)
+    }
+
+    return nil
+}
+
 
 func (u *eventInsideUsecase) UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error{
-	return u.repo.UpdateEventStatusAndComment(eventID,userID,status,comment)
+	
+
+
+	return u.insideRepo.UpdateEventStatusAndComment(eventID,userID,status,comment)
 }
 
 func (u *eventInsideUsecase) CountEventInside(eventID uint) (uint,error){
-	return u.repo.CountEventInside(eventID)
+	
+	return u.insideRepo.CountEventInside(eventID)
+}
+
+func (u *eventInsideUsecase) UploadFile(file *multipart.FileHeader, eventID uint, userID uint) error {
+	// ตรวจสอบว่าไฟล์เป็น PDF หรือไม่
+	if file.Header.Get("Content-Type") != "application/pdf" {
+		return fmt.Errorf("only PDF files are allowed")
+	}
+
+	// ส่งคำขอไปยัง File System เพื่อบันทึกไฟล์
+	err := fileSystem.SaveFile(file, eventID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to save file: %w", err)
+	}
+
+	return nil
 }

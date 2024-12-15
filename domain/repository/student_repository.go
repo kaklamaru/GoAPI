@@ -12,6 +12,7 @@ type StudentRepository interface {
 	CreateStudent(tx transaction.Transaction,student *entities.Student) error
 	EditStudentByID(student *entities.Student) error
 	GetAllStudent() ([]entities.Student, error)
+	// GetStudentByUserID(id uint) (*entities.Student, error)
 }
 
 type studentRepository struct {

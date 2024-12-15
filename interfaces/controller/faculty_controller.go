@@ -3,7 +3,8 @@ package controller
 import (
 	"RESTAPI/domain/entities"
 	"RESTAPI/usecase"
-	"strconv"
+	"RESTAPI/utility"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -45,14 +46,12 @@ func (c *FacultyController) UpdateFaculty(ctx *fiber.Ctx) error {
     // สร้างตัวแปรสำหรับเก็บข้อมูลคณะจาก request body
 
     faculty := new(entities.Faculty)
-    idstr := ctx.Params("id")
-    idint, err := strconv.Atoi(idstr)
-    if err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid id format",
-        })
-    }
-    id := uint(idint)
+    id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
 
     faculty.FacultyID=id
     // ตรวจสอบข้อมูลที่รับมาว่าถูกต้องหรือไม่
@@ -89,14 +88,12 @@ func (c *FacultyController) GetAllFaculties(ctx *fiber.Ctx) error {
 // GetFaculty ฟังก์ชันสำหรับดึงข้อมูลคณะตาม ID
 func (c *FacultyController) GetFaculty(ctx *fiber.Ctx) error {
     // ดึงค่า ID จากพารามิเตอร์ของ URL
-    idstr := ctx.Params("id")
-    idint, err := strconv.Atoi(idstr)
-    if err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid id format",
-        })
-    }
-    id := uint(idint)
+    id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
     // เรียกใช้ usecase เพื่อดึงข้อมูลคณะตาม ID
     faculty, err := c.usecase.GetFaculty(id)
     if err != nil {
@@ -110,14 +107,12 @@ func (c *FacultyController) GetFaculty(ctx *fiber.Ctx) error {
 }
 
 func (c *FacultyController) DeleteFacultyByID(ctx *fiber.Ctx) error{
-    idstr := ctx.Params("id")
-    idint,err := strconv.Atoi(idstr)
-    if err != nil {
-        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid id format",
-        })
-    }
-    id := uint(idint)
+    id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
     faculty,err := c.usecase.DeleteFacultyByID(id)
     if err != nil {
         return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

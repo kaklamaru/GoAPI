@@ -1,11 +1,8 @@
 package controller
 
 import (
-	"RESTAPI/domain/entities"
 	"RESTAPI/usecase"
 	"RESTAPI/utility"
-	// "fmt"
-	// "time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -16,8 +13,8 @@ type EventInsideController struct {
 	userUsecase   usecase.UserUsecase
 }
 
-func NewEventInsideController(insideUsecase usecase.EventInsideUsecase, 
-	eventUsecase usecase.EventUsecase, 
+func NewEventInsideController(insideUsecase usecase.EventInsideUsecase,
+	eventUsecase usecase.EventUsecase,
 	userUsecase usecase.UserUsecase) *EventInsideController {
 	return &EventInsideController{
 		insideUsecase: insideUsecase,
@@ -26,35 +23,8 @@ func NewEventInsideController(insideUsecase usecase.EventInsideUsecase,
 	}
 }
 
-func checkPermission(permission *entities.EventResponse, user *entities.Student) bool {
-	if permission == nil || user == nil {
-		return false
-	}
-	permissionBranch := permission.AllowAllBranch
-	permissionYear := permission.AllowAllYear
-
-	if !permissionBranch && permission.BranchIDs != nil {
-		for _, branch := range permission.BranchIDs {
-			if user.BranchId == branch {
-				permissionBranch = true
-				break
-			}
-		}
-	}
-
-	if !permissionYear && permission.Years != nil {
-		for _, year := range permission.Years {
-			if user.Year == year {
-				permissionYear = true
-				break
-			}
-		}
-	}
-
-	return permissionBranch && permissionYear
-}
-
 func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
+	// แปลง eventID
 	id, err := utility.GetUintID(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -62,6 +32,7 @@ func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
 		})
 	}
 
+	// ดึง userID จาก JWT
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -69,50 +40,17 @@ func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
 		})
 	}
 
-	userIDFloat, ok := claims["user_id"].(float64)
+	userID, ok := utility.GetUserIDFromClaims(claims)
 	if !ok {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid user_id in claims",
 		})
 	}
-	userID := uint(userIDFloat)
 
-	student, err := c.userUsecase.GetStudentByUserID(userID)
-	if err != nil || student == nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Student not found",
-		})
-	}
-
-	event, err := c.eventUsecase.GetEventByID(id)
-	if err != nil || event == nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Event not found",
-		})
-	}
-
-	if event.FreeSpace == 0 {
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "The event is full. Cannot join.",
-		})
-	}
-
-	if !checkPermission(event, student) {
-		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "Not allowed to join this event",
-		})
-	}
-
-	eventInside := &entities.EventInside{
-		EventId:   id,
-		User:      userID,
-		Status:    false,
-		Certifier: event.Creator,
-	}
-
-	if err := c.insideUsecase.JoinEventInside(eventInside); err != nil {
+	// เรียกใช้ usecase
+	if err := c.insideUsecase.JoinEventInside(id, userID); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to join event",
+			"error": err.Error(),
 		})
 	}
 
@@ -162,7 +100,21 @@ func (c *EventInsideController) ConfirmAndCheck(ctx *fiber.Ctx) error {
 		Comment string `json:"comment"`
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(req)
+	if err := ctx.BodyParser(req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request payload",
+		})
+	}
+
+	if err := c.insideUsecase.UpdateEventStatusAndComment(req.EventID, req.UserID, req.Status, req.Comment); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Checking successfully",
+	})
 
 }
 
@@ -186,4 +138,94 @@ func (c *EventInsideController) CountEventInside(ctx *fiber.Ctx) error {
 	freeSpace := event.Limit - count
 
 	return ctx.Status(fiber.StatusOK).JSON(freeSpace)
+}
+
+// func (c *EventInsideController) UploadFile(ctx *fiber.Ctx) error {
+// 	id, err := utility.GetUintID(ctx)
+// 	if err != nil {
+// 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error": "Invalid event ID",
+// 		})
+// 	}
+// 	claims, err := utility.GetClaimsFromContext(ctx)
+// 	if err != nil {
+// 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+// 			"error": "Failed to get user claims",
+// 		})
+// 	}
+
+// 	userIDFloat, ok := claims["user_id"].(float64)
+// 	if !ok {
+// 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+// 			"error": "Invalid user_id in claims",
+// 		})
+// 	}
+// 	userID := uint(userIDFloat)
+
+
+// 	file, err := ctx.FormFile("file")
+// 	if err != nil {
+// 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error": "failed to get file",
+// 		})
+// 	}
+
+// 	if err:= c.insideUsecase.UploadFile(*file,id,userID);err != nil {
+// 		 return ctx.Status(fiber.StatusInternalServerError).JSON(
+// 			fiber.Map{
+// 				"error":err.Error(),
+// 			},
+// 		 )	
+// 	}
+
+// 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+// 		"message": "file uploaded successfully",
+// 	})
+// }
+
+func (c *EventInsideController) UploadFile(ctx *fiber.Ctx) error {
+	// รับค่า Event ID และ User ID จาก context
+	id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid event ID",
+		})
+	}
+
+	// รับ claims จาก context เพื่อตรวจสอบ user
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Failed to get user claims",
+		})
+	}
+
+	// ดึง userID จาก claims
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id in claims",
+		})
+	}
+	userID := uint(userIDFloat)
+
+	// รับไฟล์จาก request
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "failed to get file",
+		})
+	}
+
+	// เรียกใช้ UseCase เพื่อประมวลผลไฟล์
+	if err := c.insideUsecase.UploadFile(file, id, userID); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// ส่งกลับข้อความสำเร็จ
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "file uploaded successfully",
+	})
 }

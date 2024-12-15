@@ -29,7 +29,6 @@ func JWTMiddlewareFromCookie(jwtService *jwt.JWTService) fiber.Handler {
     }
 }
 
-// RoleMiddleware ตรวจสอบ role ที่อนุญาตให้เข้าถึง API
 func RoleMiddleware(allowedRoles ...string) fiber.Handler {
     return func(ctx *fiber.Ctx) error {
         claims, ok := ctx.Locals("claims").(jwtPkg.MapClaims) // ใช้ jwt.MapClaims จากที่ import ใน jwtService

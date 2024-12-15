@@ -32,8 +32,8 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	eventRepo := repository.NewEventRepository(db.GetDb())
 	
 	insideRepo := repository.NewEventInsideRepository(db.GetDb())
-	insideUsecase := usecase.NewEventInsideUsecase(insideRepo)
 	eventUsecase := usecase.NewEventUsecase(eventRepo,branchRepo,insideRepo)
+	insideUsecase := usecase.NewEventInsideUsecase(insideRepo,userRepo ,eventUsecase,txManager)
 	eventController := controller.NewEventController(eventUsecase,txManager)
 	insideController := controller.NewEventInsideController(insideUsecase,eventUsecase,userUsecase)
 
@@ -45,6 +45,8 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
 	teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
 	student := protected.Group("/student", middleware.RoleMiddleware("student"))
+	adminTeacher := protected.Group("/admin-teacher", middleware.RoleMiddleware("teacher", "admin"))
+
 
 
 	protected.Get("/userbyclaim", userController.GetUserByClaims)
@@ -67,13 +69,18 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin.Get("/students", userController.GetAllStudent)
 	admin.Get("/teachers", userController.GetAllTeacher)
 
-	protected.Post("/event", eventController.CreateEvent)
+	adminTeacher.Post("/event", eventController.CreateEvent)
+	adminTeacher.Put("/status/:id",eventController.StatusEvent)
 	protected.Get("/events", eventController.GetAllEvent)
 	protected.Get("/event/:id", eventController.GetEventByID)
-	protected.Put("/event/:id", eventController.EditEvent)
-	protected.Delete("/event/:id",eventController.DeleteEvent)
+	adminTeacher.Put("/event/:id", eventController.EditEvent)
+	adminTeacher.Delete("/event/:id",eventController.DeleteEvent)
+	protected.Get("/count/:id",insideController.CountEventInside)
 	
 	student.Post("/join/:id",insideController.JoinEvent)
 	student.Delete("/unjoin/:id",insideController.UnJoinEventInside)
-	protected.Get("/count/:id",insideController.CountEventInside)
+
+	student.Post("upload/:id",insideController.UploadFile)
+
+	
 }

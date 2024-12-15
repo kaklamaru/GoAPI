@@ -14,7 +14,7 @@ services:
     ports:
       - "3306:3306"
     restart: unless-stopped
-    command: --log-bin-trust-function-creators=1 # เพิ่มตัวเลือกนี้เพื่อเปิดใช้งาน
+    command: --log-bin-trust-function-creators=1 
      
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest

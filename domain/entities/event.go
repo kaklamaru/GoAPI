@@ -9,15 +9,15 @@ type Event struct {
 	StartDate      time.Time `gorm:"not null" json:"start_date"`
 	WorkingHour    uint      `gorm:"not null" json:"working_hour"`
 	FreeSpace      uint      `gorm:"not null" json:"free_space"`
+	Location       string    `gorm:"not null" json:"location"`
 	Detail         string    `json:"detail"`
 	BranchIDs      string    `gorm:"type:json" json:"branches"`
 	Years          string    `gorm:"type:json" json:"years"`
 	AllowAllBranch bool      `json:"allow_all_branch"`
 	AllowAllYear   bool      `json:"allow_all_year"`
-	Status         bool      `gorm:"default:true" json:"status"` 
+	Status         bool      `gorm:"default:true" json:"status"`
 	Teacher        Teacher   `gorm:"foreignKey:Creator;references:UserID" json:"teacher"`
 }
-
 
 type EventInside struct {
 	EventId   uint    `gorm:"primaryKey" json:"event_id"`
@@ -30,7 +30,6 @@ type EventInside struct {
 	Comment   string  `json:"comment"`
 	FilePDF   string  `gorm:"size:255" json:"file_pdf"`
 }
-
 
 type EventOutside struct {
 	EventID   uint `gorm:"primaryKey;autoIncrement" json:"event_id"`
@@ -46,27 +45,26 @@ type EventOutside struct {
 	Image2    string
 }
 
-//
 type EventResponse struct {
 	EventID        uint      `json:"event_id"`
 	EventName      string    `json:"event_name"`
-	Creator        uint      `json:"creator"`
 	StartDate      time.Time `json:"start_date"`
 	WorkingHour    uint      `json:"working_hour"`
 	Limit          uint      `json:"limit"`
 	FreeSpace      uint      `json:"free_space"`
+	Location       string    `json:"location"`
 	Detail         string    `json:"detail"`
+	Status         bool      `json:"status"`
 	BranchIDs      []uint    `json:"branches"`
 	Years          []uint    `json:"years"`
-	Status         bool      `json:"status"` 
 	AllowAllBranch bool      `json:"allow_all_branch"`
 	AllowAllYear   bool      `json:"allow_all_year"`
-	Teacher        struct {
+	Creator        struct {
 		UserID    uint   `json:"user_id"`
 		TitleName string `json:"title_name"`
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
 		Phone     string `json:"phone"`
 		Code      string `json:"code"`
-	} `json:"teacher"`
+	} `json:"creator"`
 }
