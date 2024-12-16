@@ -24,7 +24,6 @@ func NewEventInsideController(insideUsecase usecase.EventInsideUsecase,
 }
 
 func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
-	// แปลง eventID
 	id, err := utility.GetUintID(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -32,7 +31,6 @@ func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ดึง userID จาก JWT
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -47,7 +45,6 @@ func (c *EventInsideController) JoinEvent(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// เรียกใช้ usecase
 	if err := c.insideUsecase.JoinEventInside(id, userID); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -184,7 +181,6 @@ func (c *EventInsideController) CountEventInside(ctx *fiber.Ctx) error {
 // }
 
 func (c *EventInsideController) UploadFile(ctx *fiber.Ctx) error {
-	// รับค่า Event ID และ User ID จาก context
 	id, err := utility.GetUintID(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -192,7 +188,6 @@ func (c *EventInsideController) UploadFile(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// รับ claims จาก context เพื่อตรวจสอบ user
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -200,7 +195,6 @@ func (c *EventInsideController) UploadFile(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// ดึง userID จาก claims
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -209,7 +203,6 @@ func (c *EventInsideController) UploadFile(ctx *fiber.Ctx) error {
 	}
 	userID := uint(userIDFloat)
 
-	// รับไฟล์จาก request
 	file, err := ctx.FormFile("file")
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -217,14 +210,12 @@ func (c *EventInsideController) UploadFile(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// เรียกใช้ UseCase เพื่อประมวลผลไฟล์
 	if err := c.insideUsecase.UploadFile(file, id, userID); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	// ส่งกลับข้อความสำเร็จ
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "file uploaded successfully",
 	})

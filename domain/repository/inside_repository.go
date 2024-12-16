@@ -16,6 +16,9 @@ type EventInsideRepository interface {
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
 	CountEventInside(eventID uint) (uint, error)
 	IsUserJoinedEvent(eventID uint, userID uint) (bool, error) 
+    UpdateFile(eventID uint, userID uint, filePath string) error 
+    GetFilePathByEvent(eventID uint, userID uint) (string, error) 
+
 }
 
 type eventInsideRepository struct {
@@ -152,4 +155,39 @@ func (r *eventInsideRepository) IsUserJoinedEvent(eventID uint, userID uint) (bo
     return count > 0, nil
 }
 
+func (r *eventInsideRepository) UpdateFile(eventID uint, userID uint, filePath string) error {
+
+    if err := r.db.Model(&entities.EventInside{}).
+        Where("event_id = ? AND user = ?", eventID, userID).
+        Update("file_pdf", filePath).Error; err != nil {
+        return err
+    }
+    return nil
+}
+
+func (r *eventInsideRepository) GetFilePathByEvent(eventID uint, userID uint) (string, error) {
+    var filePath string
+
+    // ตรวจสอบว่า eventID และ userID มีอยู่จริงหรือไม่
+    var count int64
+    err := r.db.Model(&entities.EventInside{}).
+        Where("event_id = ? AND user = ?", eventID, userID).
+        Count(&count).Error
+    if err != nil {
+        return "", fmt.Errorf("error checking event and user existence: %w", err)
+    }
+    if count == 0 {
+        return "", fmt.Errorf("eventID %d and userID %d not found", eventID, userID)
+    }
+
+    // ดึงค่า file_pdf ถ้ามี event และ user อยู่จริง
+    err = r.db.Model(&entities.EventInside{}).
+        Where("event_id = ? AND user = ?", eventID, userID).
+        Pluck("file_pdf", &filePath).Error
+    if err != nil {
+        return "", fmt.Errorf("failed to fetch file path: %w", err)
+    }
+
+    return filePath, nil
+}
 
