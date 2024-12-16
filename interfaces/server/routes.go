@@ -82,5 +82,8 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 	student.Post("upload/:id",insideController.UploadFile)
 
+
+	// 
+	student.Get("/file/:id",insideController.GetFile)
 	
 }

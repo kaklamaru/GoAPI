@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"os"
+
 )
 
 
@@ -17,6 +18,8 @@ type EventInsideUsecase interface{
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
 	CountEventInside(eventID uint) (uint,error)
 	UploadFile(file *multipart.FileHeader, eventID uint, userID uint) error 	
+	GetFile(eventID uint,userID uint) (string,error)
+
 }
 
 type eventInsideUsecase struct{
@@ -175,7 +178,7 @@ func (u *eventInsideUsecase) UploadFile(file *multipart.FileHeader, eventID uint
         return fmt.Errorf("only PDF files are allowed")
     }
 
-	
+
     // ค้นหาว่า event นี้มีการบันทึกไฟล์ไว้หรือยัง
     currentFilePath, err := u.insideRepo.GetFilePathByEvent(eventID, userID)
     if err != nil {
@@ -210,4 +213,14 @@ func (u *eventInsideUsecase) UploadFile(file *multipart.FileHeader, eventID uint
     return nil
 }
 
+func (u *eventInsideUsecase) GetFile(eventID uint, userID uint) (string, error) {
+    // ดึง path ของไฟล์จาก repository
+    filePath, err := u.insideRepo.GetFilePath(eventID, userID)
+    if err != nil {
+        return "", err
+    }
+
+    // ส่งคืน path ของไฟล์แทน URL
+    return filePath, nil
+}
 

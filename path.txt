@@ -45,4 +45,8 @@ RESTAPI/
 │   ├── help.go                      
 │   ├── transactionHelp.go                      
 │
+├── uploads/
+│   ├── 12/                      
+│   │   ├── 8f409a3f-aca0-4d28-993c-3c87cfccc79e.pdf                  
+│
 └── go.mod                           # Go Modules

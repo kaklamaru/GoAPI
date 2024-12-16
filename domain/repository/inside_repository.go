@@ -18,6 +18,7 @@ type EventInsideRepository interface {
 	IsUserJoinedEvent(eventID uint, userID uint) (bool, error) 
     UpdateFile(eventID uint, userID uint, filePath string) error 
     GetFilePathByEvent(eventID uint, userID uint) (string, error) 
+    GetFilePath(eventID uint,userID uint) (string, error)
 
 }
 
@@ -190,4 +191,20 @@ func (r *eventInsideRepository) GetFilePathByEvent(eventID uint, userID uint) (s
 
     return filePath, nil
 }
+
+func (r *eventInsideRepository) GetFilePath(eventID uint, userID uint) (string, error) {
+    var filePath string
+    // ใช้ GORM เพื่อดึงข้อมูล path ของไฟล์
+    err := r.db.Model(&entities.EventInside{}).
+        Where("event_id = ? AND user = ?", eventID, userID).
+        Pluck("file_pdf", &filePath).Error
+    if err != nil {
+        return "", fmt.Errorf("failed to retrieve file path: %w", err)
+    }
+    if filePath == "" {
+        return "", fmt.Errorf("no file found for the specified event and user")
+    }
+    return filePath, nil
+}
+
 
