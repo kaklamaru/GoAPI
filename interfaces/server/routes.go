@@ -50,11 +50,14 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 
 	protected.Get("/userbyclaim", userController.GetUserByClaims)
+
 	student.Put("/personalinfo", userController.EditStudent)
 	teacher.Put("/personalinfo", userController.EditTeacher)
 	admin.Put("/personalinfo", userController.EditTeacher)
+
 	admin.Put("/studentinfo", userController.EditStudentByID)
 	admin.Put("/teacherinfo", userController.EditTeacherByID)
+	
 	admin.Post("/faculty", facultyController.AddFaculty)
 	admin.Put("/faculty/:id", facultyController.UpdateFaculty)
 	admin.Delete("/faculty/:id", facultyController.DeleteFacultyByID)
@@ -83,7 +86,6 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	student.Post("upload/:id",insideController.UploadFile)
 
 
-	// 
 	student.Get("/file/:id",insideController.GetFile)
 	
 }

@@ -1,52 +1,68 @@
 RESTAPI/
-│
-├── main.go                      # Entry point ของแอปพลิเคชัน
-│
-├── config/
-│   └── config.go                    # การตั้งค่าคอนฟิกต่างๆ (e.g., JWT secret, database)
-│
-├── domain/
-│   ├── entities/
-│   │   ├── user.go                  # Struct ของ User
-│   │   ├── student.go               # Struct ของ Student
-│   │   └── teacher.go               # Struct ของ Teacher
+│                   
+├── config/                             # จัดการคอนฟิกระบบ เช่น Database, JWT, และ Environment Variables
+│   └── config.go                       # โหลดและจัดการค่าการตั้งค่าต่าง ๆ (Config Loader)
+│                    
+├── domain/                             # เลเยอร์ที่เป็น Core Business Logic
+│   ├── entities/                       # เก็บโครงสร้างข้อมูลหลักของระบบ
+│   │   ├── user.go                     # โครงสร้างข้อมูลของ User
+│   │   ├── event.go                    # โครงสร้างข้อมูลของ Event
+│   │   └── faculty.go                  # โครงสร้างข้อมูลของ Faculty
 │   │
-│   └── repository/
-│       ├── user_repository.go       # Interface สำหรับ User Repository
-│       ├── student_repository.go    # Interface สำหรับ Student Repository
-│       └── teacher_repository.go    # Interface สำหรับ Teacher Repository
-│
-├── infrastructure/
-│   ├── database/
-│   │   └── db.go                    # การเชื่อมต่อกับฐานข้อมูล (GORM)
-│   ├── middleware/
-│   └── jwt/
-│       └── jwt_service.go           # การสร้างและตรวจสอบ JWT
-│
-├── interfaces/
-│   ├── controllers/
-│   │   ├── user_controller.go       # Logic สำหรับ User API (Login, Register)
-│   │   ├── student_controller.go    # Logic สำหรับ Student API
-│   │   └── teacher_controller.go    # Logic สำหรับ Teacher API
+│   ├── transaction/                    # เกี่ยวกับการจัดการธุรกรรม (Transaction Management)
+│   │   └── transaction.go              # ฟังก์ชันการทำงานที่เกี่ยวข้องกับ Transaction
 │   │
+│   └── repository/                     # Interface สำหรับเชื่อมต่อกับ Data Source
+│       ├── user_repository.go          # (Interface) สำหรับ User Repository
+│       ├── student_repository.go       # (Interface) สำหรับ Student Repository
+│       ├── teacher_repository.go       # (Interface) สำหรับ Teacher Repository
+│       ├── inside_repository.go        # (Interface) สำหรับ Inside Repository
+│       ├── event_repository.go         # (Interface) สำหรับ Event Repository
+│       ├── faculty_repository.go       # (Interface) สำหรับ Faculty Repository
+│       └── branch_repository.go        # (Interface) สำหรับ Branch Repository
+│
+├── infrastructure/                     # ส่วนที่ทำงานร่วมกับ Framework, Tools และ Third-Party
+│   ├── database/                       # การเชื่อมต่อกับฐานข้อมูล
+│   │   └── database.go                 # ฟังก์ชันสำหรับเชื่อมต่อ Database เช่น PostgreSQL
 │   │
-│   └── routes/
-│       └── routes.go                # การรวมเส้นทาง API
+│   ├── middleware/                     # Middleware สำหรับจัดการ Request/Response
+│   │   └── middleware.go               # ฟังก์ชัน Middleware เช่น Logging, CORS, Authentication
+│   │
+│   └── jwt/                            # จัดการ JWT สำหรับ Authentication
+│       └── jwt.go                      # ฟังก์ชันการสร้างและตรวจสอบ JWT Token
 │
-├── usecases/
-│   ├── user_usecase.go              # Logic ธุรกิจเกี่ยวกับ User
-│   ├── student_usecase.go           # Logic ธุรกิจเกี่ยวกับ Student
-│   └── teacher_usecase.go           # Logic ธุรกิจเกี่ยวกับ Teacher
+├── interfaces/                         # ส่วนเชื่อมต่อกับ Client หรือ External System
+│   ├── controllers/                    # จัดการ HTTP Request/Response
+│   │   ├── user_controller.go          # ควบคุมการทำงานที่เกี่ยวข้องกับ User
+│   │   ├── faculty_controller.go       # ควบคุมการทำงานที่เกี่ยวข้องกับ Faculty
+│   │   ├── branch_controller.go        # ควบคุมการทำงานที่เกี่ยวข้องกับ Branch
+│   │   ├── event_controller.go         # ควบคุมการทำงานที่เกี่ยวข้องกับ Event
+│   │   └── inside_controller.go        # ควบคุมการทำงานที่เกี่ยวข้องกับ Inside
+│   │
+│   └── server/                         # ตั้งค่าและเริ่มต้นเซิร์ฟเวอร์
+│       ├── routes.go                   # กำหนดเส้นทาง (Routing) สำหรับ API
+│       └── server.go                   # เริ่มต้น HTTP Server และ Middleware ต่าง ๆ
 │
-├── pkg/
-│   ├── hash.go                      # ฟังก์ชันสำหรับ Hash/Verify Password
+├── usecases/                           # Business Logic ที่ไม่ผูกกับ Controller หรือ Framework ใด ๆ
+│   ├── user_usecase.go                 # Business Logic สำหรับ User
+│   ├── branch_usecase.go               # Business Logic สำหรับ Branch
+│   ├── faculty_usecase.go              # Business Logic สำหรับ Faculty
+│   ├── event_usecase.go                # Business Logic สำหรับ Event
+│   └── inside_usecase.go               # Business Logic สำหรับ Inside
 │
-├── utility/
-│   ├── help.go                      
-│   ├── transactionHelp.go                      
+├── pkg/                                # เก็บเครื่องมือที่ใช้ซ้ำได้ในระบบ
+│   └── hash.go                         # ฟังก์ชันสำหรับ Hashing เช่น bcrypt สำหรับ Password
 │
-├── uploads/
-│   ├── 12/                      
-│   │   ├── 8f409a3f-aca0-4d28-993c-3c87cfccc79e.pdf                  
+├── utility/                            # ฟังก์ชันช่วยเหลือทั่วไปที่ไม่ได้ผูกกับ Business Logic
+│   ├── help.go                         # ฟังก์ชันช่วยเหลือที่ใช้ซ้ำบ่อย
+│   ├── transactionHelp.go              # ฟังก์ชันช่วยเหลือที่เกี่ยวข้องกับ Transaction
+│   └── fileSystem.go                   # จัดการไฟล์ในระบบ เช่น อัปโหลดไฟล์หรือสร้างไดเรกทอรี
 │
-└── go.mod                           # Go Modules
+├── uploads/                            # เก็บไฟล์ที่อัปโหลดจากผู้ใช้งาน
+│   └── 12/                             # ตัวอย่างโฟลเดอร์ย่อยสำหรับการอัปโหลดไฟล์
+│       └── -----.pdf                   # ตัวอย่างไฟล์ที่อัปโหลด
+│
+├── go.mod                              # ไฟล์ Go Modules สำหรับจัดการ Dependency
+├── go.sum                              # ไฟล์ Lock สำหรับ Dependency
+├── docker-compose.yml                  # ตั้งค่า Docker สำหรับรัน Service ต่าง ๆ เช่น Database, API
+└── main.go                             # จุดเริ่มต้นของแอปพลิเคชัน

@@ -278,9 +278,9 @@ func (c *UserController) EditStudent(ctx *fiber.Ctx) error {
 		"message": "Student edited successfully",
 	})
 }
+
 func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error {
 	var req struct {
-		UserID    uint   `json:"user_id"`
 		TitleName string `json:"title_name"`
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
@@ -288,6 +288,12 @@ func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error {
 		Code      string `json:"code"`
 		Year      uint   `json:"year"`
 		BranchID  uint   `json:"branch_id"`
+	}
+	id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -302,7 +308,7 @@ func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error {
 		Code:      req.Code,
 		Year:      req.Year,
 		BranchId:  req.BranchID,
-		UserID:    req.UserID,
+		UserID:    id,
 	}
 	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
 	if err := c.userUsecase.EditStudentByID(student); err != nil {
@@ -316,12 +322,17 @@ func (c *UserController) EditStudentByID(ctx *fiber.Ctx) error {
 
 func (c *UserController) EditTeacherByID(ctx *fiber.Ctx) error {
 	var req struct {
-		UserID    uint   `json:"user_id"`
 		TitleName string `json:"title_name"`
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
 		Phone     string `json:"phone"`
 		Code      string `json:"code"`
+	}
+	id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -334,7 +345,7 @@ func (c *UserController) EditTeacherByID(ctx *fiber.Ctx) error {
 		LastName:  req.LastName,
 		Phone:     req.Phone,
 		Code:      req.Code,
-		UserID:    req.UserID,
+		UserID:    id,
 	}
 	// เรียกใช้ UserUsecase เพื่อสร้าง User และ Student พร้อมกัน
 	if err := c.userUsecase.EditTeacherByID(teacher); err != nil {

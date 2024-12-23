@@ -39,6 +39,7 @@ func NewServer(cfg *config.Config, db database.Database ,jwtService *jwt.JWTServ
         AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",                        // Methods ที่อนุญาต
         AllowCredentials: true,                                                // รองรับ cookies
     }))
+	
 	app.Static("/uploads", "./uploads")
 	// กำหนด middleware สำหรับการกู้คืนจาก panic
 	app.Use(recover.New())

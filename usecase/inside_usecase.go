@@ -220,7 +220,6 @@ func (u *eventInsideUsecase) GetFile(eventID uint, userID uint) (string, error) 
         return "", err
     }
 
-    // ส่งคืน path ของไฟล์แทน URL
     return filePath, nil
 }
 

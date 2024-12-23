@@ -33,12 +33,18 @@ func (r *studentRepository) CreateStudent(tx transaction.Transaction,student *en
 
 func (r *userRepository) GetStudentByUserID(id uint) (*entities.Student, error) {
 	var student entities.Student
-	result := r.db.Preload("Branch.Faculty").Where("user_id = ?", id).First(&student)
+	result := r.db.
+		Preload("Branch.Faculty").
+		Where("user_id = ?", id).
+		First(&student)
+
 	if result.Error != nil {
 		return nil, result.Error
 	}
+
 	return &student, nil
 }
+
 
 func (r *studentRepository) EditStudentByID(student *entities.Student) error {
 	return r.db.Save(student).Error
