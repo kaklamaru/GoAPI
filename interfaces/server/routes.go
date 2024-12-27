@@ -19,7 +19,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	studentRepo := repository.NewStudentRepository(db.GetDb())
 	teacherRepo := repository.NewTeacherRepository(db.GetDb())
 	userUsecase := usecase.NewUserUsecase(userRepo, studentRepo, teacherRepo)
-	userController := controller.NewUserController(userUsecase, *jwtService,txManager)
+	userController := controller.NewUserController(userUsecase, *jwtService, txManager)
 
 	facultyRepo := repository.NewFacultyRepository(db.GetDb())
 	facultyUsecase := usecase.NewFacultyUsecase(facultyRepo)
@@ -30,12 +30,12 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	branchController := controller.NewBranchController(branchUsecase)
 
 	eventRepo := repository.NewEventRepository(db.GetDb())
-	
+
 	insideRepo := repository.NewEventInsideRepository(db.GetDb())
-	eventUsecase := usecase.NewEventUsecase(eventRepo,branchRepo,insideRepo)
-	insideUsecase := usecase.NewEventInsideUsecase(insideRepo,userRepo ,eventUsecase,txManager)
-	eventController := controller.NewEventController(eventUsecase,txManager)
-	insideController := controller.NewEventInsideController(insideUsecase,eventUsecase,userUsecase)
+	eventUsecase := usecase.NewEventUsecase(eventRepo, branchRepo, insideRepo)
+	insideUsecase := usecase.NewEventInsideUsecase(insideRepo, userRepo, eventUsecase, txManager)
+	eventController := controller.NewEventController(eventUsecase, txManager)
+	insideController := controller.NewEventInsideController(insideUsecase, eventUsecase, userUsecase)
 
 	app.Post("/register/student", userController.RegisterStudent)
 	app.Post("/register/teacher", userController.RegisterTeacher)
@@ -45,9 +45,9 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
 	teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
 	student := protected.Group("/student", middleware.RoleMiddleware("student"))
-	adminTeacher := protected.Group("/admin-teacher", middleware.RoleMiddleware("teacher", "admin"))
-
-
+	// adminTeacher := protected.Group("/admin-teacher", middleware.RoleMiddleware("admin", "teacher"))
+	admin.Post("/event", eventController.CreateEvent)
+	teacher.Post("/event", eventController.CreateEvent)
 
 	protected.Get("/userbyclaim", userController.GetUserByClaims)
 
@@ -57,7 +57,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 	admin.Put("/studentinfo", userController.EditStudentByID)
 	admin.Put("/teacherinfo", userController.EditTeacherByID)
-	
+
 	admin.Post("/faculty", facultyController.AddFaculty)
 	admin.Put("/faculty/:id", facultyController.UpdateFaculty)
 	admin.Delete("/faculty/:id", facultyController.DeleteFacultyByID)
@@ -72,20 +72,24 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin.Get("/students", userController.GetAllStudent)
 	admin.Get("/teachers", userController.GetAllTeacher)
 
-	adminTeacher.Post("/event", eventController.CreateEvent)
-	adminTeacher.Put("/status/:id",eventController.StatusEvent)
+	admin.Put("/status/:id", eventController.StatusEvent)
+	teacher.Put("/status/:id", eventController.StatusEvent)
+	
 	protected.Get("/events", eventController.GetAllEvent)
 	protected.Get("/event/:id", eventController.GetEventByID)
-	adminTeacher.Put("/event/:id", eventController.EditEvent)
-	adminTeacher.Delete("/event/:id",eventController.DeleteEvent)
-	protected.Get("/count/:id",insideController.CountEventInside)
-	
-	student.Post("/join/:id",insideController.JoinEvent)
-	student.Delete("/unjoin/:id",insideController.UnJoinEventInside)
 
-	student.Post("upload/:id",insideController.UploadFile)
+	admin.Put("/event/:id", eventController.EditEvent)
+	teacher.Put("/event/:id", eventController.EditEvent)
+	admin.Delete("/event/:id", eventController.DeleteEvent)
+	teacher.Delete("/event/:id", eventController.DeleteEvent)
 
+	protected.Get("/count/:id", insideController.CountEventInside)
 
-	student.Get("/file/:id",insideController.GetFile)
-	
+	student.Post("/join/:id", insideController.JoinEvent)
+	student.Delete("/unjoin/:id", insideController.UnJoinEventInside)
+
+	student.Post("upload/:id", insideController.UploadFile)
+
+	student.Get("/file/:id", insideController.GetFile)
+
 }

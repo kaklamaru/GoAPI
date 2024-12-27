@@ -7,9 +7,7 @@ import (
 	"RESTAPI/pkg"
 	"RESTAPI/usecase"
 	"RESTAPI/utility"
-
 	"time"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -205,7 +203,6 @@ func (c *UserController) GetUserByClaims(ctx *fiber.Ctx) error {
 
 	// ใช้ if-else เพื่อตรวจสอบ role
 	if role == "student" {
-		// ถ้า role เป็น "student"
 		student, err := c.userUsecase.GetStudentByUserID(userID)
 		if err != nil {
 			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

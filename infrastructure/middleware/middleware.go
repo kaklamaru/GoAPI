@@ -1,34 +1,36 @@
 package middleware
 
 import (
-    "RESTAPI/infrastructure/jwt"
-    "github.com/gofiber/fiber/v2"
+	"RESTAPI/infrastructure/jwt"
+
+
+	"github.com/gofiber/fiber/v2"
 	jwtPkg "github.com/golang-jwt/jwt/v5"
 )
 
 // JWTMiddlewareFromCookie ตรวจสอบ JWT จาก Cookie
 func JWTMiddlewareFromCookie(jwtService *jwt.JWTService) fiber.Handler {
-    return func(ctx *fiber.Ctx) error {
-        
-        tokenString := ctx.Cookies("token")
-        if tokenString == "" {
-            return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-                "error": "Missing or invalid token",
-            })
-        }
+	return func(ctx *fiber.Ctx) error {
 
-        claims, err := jwtService.ValidateJWT(tokenString)
-        if err != nil {
-            return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-                "error": "Invalid token",
-            })
-        }
+		tokenString := ctx.Cookies("token")
+		if tokenString == "" {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Missing or invalid token",
+			})
+		}
 
-        ctx.Locals("claims", claims)
-        return ctx.Next()
-    }
+		claims, err := jwtService.ValidateJWT(tokenString)
+		if err != nil {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid token",
+			})
+		}
+
+		ctx.Locals("claims", claims)
+		return ctx.Next()
+	}
 }
-
+// Middleware ตรวจสอบหลายๆ role ได้
 func RoleMiddleware(allowedRoles ...string) fiber.Handler {
     return func(ctx *fiber.Ctx) error {
         claims, ok := ctx.Locals("claims").(jwtPkg.MapClaims) // ใช้ jwt.MapClaims จากที่ import ใน jwtService
@@ -56,3 +58,8 @@ func RoleMiddleware(allowedRoles ...string) fiber.Handler {
         })
     }
 }
+
+
+
+
+
