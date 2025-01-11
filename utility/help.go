@@ -40,12 +40,12 @@ func GetUserIDFromClaims(claims map[string]interface{}) (uint, bool) {
 }
 
 func GetUintID(ctx *fiber.Ctx) (uint, error) {
-    idStr := ctx.Params("id")
-    idInt, err := strconv.Atoi(idStr)
-    if err != nil {
-        return 0, fmt.Errorf("invalid id format")
-    }
-    return uint(idInt), nil
+	idStr := ctx.Params("id")
+	idInt, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid id format")
+	}
+	return uint(idInt), nil
 }
 
 func DecodeIDs(dataStr string) ([]uint, error) {
@@ -53,8 +53,8 @@ func DecodeIDs(dataStr string) ([]uint, error) {
 
 	// เช็คว่าเป็น string ว่างหรือไม่ (หลังจาก Trim เครื่องหมาย escape ออก)
 	if strings.Trim(dataStr, "\"") == "" {
-		// ถ้าเป็น string ว่าง ให้ return slice ว่าง
-		fmt.Println("IDs: []") // กรณีที่เป็น string ว่าง
+		// // ถ้าเป็น string ว่าง ให้ return slice ว่าง
+		// fmt.Println("IDs: []") // กรณีที่เป็น string ว่าง
 		return ids, nil
 	}
 
@@ -66,11 +66,7 @@ func DecodeIDs(dataStr string) ([]uint, error) {
 		// ถ้าเกิดข้อผิดพลาดในการ decode
 		fmt.Println("Error decoding IDs:", err)
 		return nil, err
-	} else {
-		// ถอดค่ามาได้สำเร็จ
-		fmt.Println("Decoded IDs:", ids)
 	}
 
 	return ids, nil
 }
-

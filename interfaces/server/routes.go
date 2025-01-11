@@ -37,6 +37,10 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	eventController := controller.NewEventController(eventUsecase, txManager)
 	insideController := controller.NewEventInsideController(insideUsecase, eventUsecase, userUsecase)
 
+	outsideRepo := repository.NewOutsideRepository(db.GetDb())
+	outsideUsecase := usecase.NewOutsideUsecase(outsideRepo)
+	outsideController := controller.NewOutsideController(outsideUsecase)
+
 	app.Post("/register/student", userController.RegisterStudent)
 	app.Post("/register/teacher", userController.RegisterTeacher)
 	app.Post("/login", userController.Login)
@@ -92,4 +96,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 	student.Get("/file/:id", insideController.GetFile)
 
+	student.Post("/outside",outsideController.CreateOutside)
+	student.Get("/outside/:id",outsideController.GetOutsideByID)
+	student.Get("/download/:id",outsideController.DownloadPDF)
 }

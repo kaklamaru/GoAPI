@@ -102,8 +102,6 @@ func (u *eventUsecase) validateBranches(branches []uint) error {
 }
 
 func (u *eventUsecase) CreateEvent(req *EventRequest, userID uint) error {
-
-
 	permission, err := u.buildPermission(req.Branches, req.Years)
 	if err != nil {
 		return err

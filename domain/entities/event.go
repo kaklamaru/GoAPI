@@ -32,39 +32,18 @@ type EventInside struct {
 }
 
 type EventOutside struct {
-	EventID   uint `gorm:"primaryKey;autoIncrement" json:"event_id"`
-	UserID    uint
-	EventName string
-	StartDate string
-	Location  string
-	Intendant string
-	Certifier uint
-	Status    bool
-	Comment   string
-	Image1    string
-	Image2    string
+	EventID     uint      `gorm:"primaryKey;autoIncrement" json:"event_id"`
+	User        uint      `gorm:"primaryKey" json:"user_id"`
+	Student     Student   `gorm:"foreignKey:User;references:UserID" json:"student"`
+	EventName   string    `gorm:"not null" json:"event_name"`
+	StartDate   time.Time `gorm:"not null" json:"start_date"`
+	Intendant   string    `gorm:"not null" json:"intendent"`
+	WorkingHour uint      `json:"working_hour"`
+	Location    string    `gorm:"not null" json:"location"`
+	Certifier   uint      `gorm:"default:null" json:"certifier"`
+	Teacher     Teacher   `gorm:"foreignKey:Certifier;references:UserID" json:"teacher"`
+	Status      bool      `json:"status"`
+	Comment     string    `json:"comment"`
+	FilePDF     string    `gorm:"size:255" json:"file_pdf"`
 }
 
-type EventResponse struct {
-	EventID        uint      `json:"event_id"`
-	EventName      string    `json:"event_name"`
-	StartDate      time.Time `json:"start_date"`
-	WorkingHour    uint      `json:"working_hour"`
-	Limit          uint      `json:"limit"`
-	FreeSpace      uint      `json:"free_space"`
-	Location       string    `json:"location"`
-	Detail         string    `json:"detail"`
-	Status         bool      `json:"status"`
-	BranchIDs      []uint    `json:"branches"`
-	Years          []uint    `json:"years"`
-	AllowAllBranch bool      `json:"allow_all_branch"`
-	AllowAllYear   bool      `json:"allow_all_year"`
-	Creator        struct {
-		UserID    uint   `json:"user_id"`
-		TitleName string `json:"title_name"`
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
-		Phone     string `json:"phone"`
-		Code      string `json:"code"`
-	} `json:"creator"`
-}

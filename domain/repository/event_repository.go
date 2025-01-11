@@ -127,7 +127,6 @@ func (r *eventRepository) DeleteEvent(id uint) error {
 	event := &entities.Event{}
 
 	if err := r.db.First(event, "event_id = ?", id).Error; err != nil {
-		// ถ้าไม่พบข้อมูล
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("event with ID %d not found", id)
 		}
