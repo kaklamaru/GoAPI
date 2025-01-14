@@ -3,6 +3,7 @@ package repository
 import (
 	"RESTAPI/domain/entities"
 	"RESTAPI/domain/transaction"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -52,8 +53,9 @@ func (r *studentRepository) EditStudentByID(student *entities.Student) error {
 
 func (r *studentRepository) GetAllStudent() ([]entities.Student, error) {
 	var student []entities.Student
-	if err := r.db.Find(&student).Error; err != nil {
+	if err := r.db.Preload("Branch.Faculty").Find(&student).Error; err != nil {
 		return nil, err
 	}
+	fmt.Println(student)
 	return student, nil
 }

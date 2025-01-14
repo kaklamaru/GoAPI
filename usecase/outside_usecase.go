@@ -66,7 +66,9 @@ func (u *outsideUsecase) GetOutsideByID(id uint) (*entities.OutsideResponse, err
 			LastName:    outside.Student.LastName,
 			Phone:       outside.Student.Phone,
 			Code:        outside.Student.Code,
+			BranchID: outside.Student.BranchId,
 			BranchName:  outside.Student.Branch.BranchName,
+			FacultyID: outside.Student.Branch.Faculty.FacultyID,
 			FacultyName: outside.Student.Branch.Faculty.FacultyName,
 		},
 	}

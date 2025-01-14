@@ -26,7 +26,6 @@ type EventResponse struct {
 	} `json:"creator"`
 }
 
-
 type OutsideRequest struct {
 	EventName   string `json:"event_name"`
 	StartDate   string `json:"start_date"`
@@ -41,9 +40,12 @@ type StudentResponse struct {
 	LastName    string `json:"last_name"`
 	Phone       string `json:"phone"`
 	Code        string `json:"code"`
+	BranchID    uint   `json:"branch_id"`
 	BranchName  string `json:"branch_name"`
+	FacultyID   uint   `json:"faculty_id"`
 	FacultyName string `json:"faculty_name"`
 }
+
 type OutsideResponse struct {
 	EventID     uint            `json:"event_id"`
 	EventName   string          `json:"event_name"`

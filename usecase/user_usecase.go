@@ -15,7 +15,7 @@ type UserUsecase interface {
 	GetTeacherByUserID(userID uint) (*entities.Teacher, error)
 	EditStudentByID(student *entities.Student) error
 	EditTeacherByID(teacher *entities.Teacher) error
-	GetAllStudent() ([]entities.Student, error)
+	GetAllStudent() ([]entities.StudentResponse, error)
 	GetAllTeacher() ([]entities.Teacher, error)
 }
 
@@ -105,8 +105,30 @@ func (u *userUsecase) EditTeacherByID(teacher *entities.Teacher) error {
 	return u.teacherRepo.EditTeacherByID(teacher)
 }
 
-func (u *userUsecase) GetAllStudent() ([]entities.Student, error) {
-	return u.studentRepo.GetAllStudent()
+func (u *userUsecase) GetAllStudent() ([]entities.StudentResponse, error) {
+	allStudent, err := u.studentRepo.GetAllStudent()
+	if err != nil {
+		return nil, err
+	}
+
+	allStudentRes := []entities.StudentResponse{}
+	for _, student := range allStudent {
+		studentRes := entities.StudentResponse{
+			UserID:     student.UserID,
+			TitleName:  student.TitleName,
+			FirstName:  student.FirstName,
+			LastName:   student.LastName,
+			Phone:      student.Phone,
+			Code:       student.Code,
+			BranchID:   student.BranchId,
+			BranchName: student.Branch.BranchName,
+			FacultyID:  student.Branch.Faculty.FacultyID,
+			FacultyName: student.Branch.Faculty.FacultyName,
+		}
+		allStudentRes = append(allStudentRes, studentRes)
+	}
+
+	return allStudentRes, nil
 }
 
 func (u *userUsecase) GetAllTeacher() ([]entities.Teacher, error) {
