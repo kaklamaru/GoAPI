@@ -79,8 +79,8 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin.Put("/status/:id", eventController.StatusEvent)
 	teacher.Put("/status/:id", eventController.StatusEvent)
 	
-	protected.Get("/events", eventController.GetAllEvent)
-	protected.Get("/event/:id", eventController.GetEventByID)
+	app.Get("/events", eventController.GetAllEvent)
+	app.Get("/event/:id", eventController.GetEventByID)
 
 	admin.Put("/event/:id", eventController.EditEvent)
 	teacher.Put("/event/:id", eventController.EditEvent)
