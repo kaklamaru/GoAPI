@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -19,6 +20,8 @@ type EventRepository interface {
 	UpdateEventStatusIfNoSpace() error
 	CanJoinEvent(eventID uint) (bool, error)
 	ToggleEventStatus(eventID uint) error
+
+	AllAllowedEvent() ([]entities.Event, error)
 }
 
 type eventRepository struct {
@@ -39,6 +42,24 @@ func (r *eventRepository) CreateEvent(event *entities.Event) error {
 func (r *eventRepository) GetAllEvent() ([]entities.Event, error) {
 	var events []entities.Event
 	if err := r.db.Preload("Teacher").Find(&events).Error; err != nil {
+		return nil, err
+	}
+	return events, nil
+}
+
+func (r *eventRepository) AllAllowedEvent() ([]entities.Event, error) {
+	var events []entities.Event
+	if err := r.db.Preload("Teacher").Where("status = true").Find(&events).Error; err != nil {
+		return nil, err
+	}
+	return events, nil
+}
+
+func (r *eventRepository) AllCurrentEvent() ([]entities.Event,error){
+	var events []entities.Event
+	today := time.Now()
+    futureDate := today.AddDate(0, 0, 30)
+	if err := r.db.Preload("Teacher").Where("start_date BETWEEN ? AND ?", today, futureDate).Find(&events).Error; err != nil {
 		return nil, err
 	}
 	return events, nil

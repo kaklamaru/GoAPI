@@ -18,6 +18,7 @@ type EventUsecase interface {
 	DeleteEvent(eventID uint, userID uint) error
 	buildPermission(branches []uint, years []uint) (*Permission, error)
 	ToggleEventStatus(eventID uint, userID uint) error
+	AllAllowedEvent() ([]entities.EventResponse, error)
 }
 
 type Permission struct {
@@ -148,6 +149,27 @@ func (u *eventUsecase) GetAllEvent() ([]entities.EventResponse, error) {
 	}
 	return res, nil
 }
+func (u *eventUsecase) AllAllowedEvent() ([]entities.EventResponse, error) {
+	events, err := u.eventRepo.AllAllowedEvent()
+	if err != nil {
+		return nil, err
+	}
+	var res []entities.EventResponse
+	for _, event := range events {
+		count, err := u.insideRepo.CountEventInside(event.EventID)
+		if err != nil {
+			return nil, err
+		}
+		mappedEvent, err := mapEventResponse(event, count)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, *mappedEvent)
+	}
+	return res, nil
+}
+
+
 
 func (u *eventUsecase) GetEventByID(id uint) (*entities.EventResponse, error) {
 	event, err := u.eventRepo.GetEventByID(id)
@@ -216,6 +238,7 @@ func (u *eventUsecase) CheckBranch(branchID uint) (bool, error) {
 	return u.branchRepo.BranchExists(branchID)
 }
 
+
 func mapEventResponse(event entities.Event, count uint) (*entities.EventResponse, error) {
 	branches, err := utility.DecodeIDs(event.BranchIDs)
 	if err != nil {
@@ -231,7 +254,8 @@ func mapEventResponse(event entities.Event, count uint) (*entities.EventResponse
 	return &entities.EventResponse{
 		EventID:        event.EventID,
 		EventName:      event.EventName,
-		StartDate:      event.StartDate,
+		StartDate:      utility.FormatToThaiDate(event.StartDate),
+		StartTime:      utility.FormatToThaiTime(event.StartDate),
 		WorkingHour:    event.WorkingHour,
 		Limit:          limit,
 		FreeSpace:      event.FreeSpace,

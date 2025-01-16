@@ -59,7 +59,8 @@ func CreatePDF(data entities.OutsideResponse) ([]byte, string, error) {
 	}
 
 	// คืนค่าเป็น []byte และชื่อไฟล์
-	fileName := fmt.Sprintf("User-%s-%s.pdf", data.Student.FirstName, data.Student.LastName)
+	// fileName := fmt.Sprintf("แบบฟอร์มบันทึกกิจกรรม.pdf")
+	fileName := "แบบฟอร์มบันทึกกิจกรรม.pdf"
 	return buf.Bytes(), fileName, nil
 
 }

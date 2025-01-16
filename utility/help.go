@@ -23,6 +23,50 @@ func ParseStartDate(dateStr string) (time.Time, error) {
 	return startDate, nil
 }
 
+// ฟังก์ชันแปลง time.Time เป็นรูปแบบวันเดือนปีแบบไทย
+var thaiMonths = []string{
+    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
+}
+
+// ฟังก์ชันแปลง time.Time เป็นรูปแบบวันเดือนปีแบบไทย
+func FormatToThaiDate(t time.Time) string {
+    // ตั้งค่า Location เป็น "Asia/Bangkok"
+    location, err := time.LoadLocation("Asia/Bangkok")
+    if err != nil {
+        return "Failed to load location"
+    }
+
+    // เปลี่ยนเวลาให้เป็นเขตเวลา Bangkok
+    t = t.In(location)
+
+    // ดึงข้อมูลวัน เดือน ปี
+    day := t.Day()
+    month := thaiMonths[t.Month()-1]
+    year := t.Year()+543
+
+    // คืนค่าข้อความรูปแบบวันเดือนปี
+    return fmt.Sprintf("%02d %s %d", day, month, year)
+}
+
+// ฟังก์ชันแปลง time.Time เป็นรูปแบบเวลา
+func FormatToThaiTime(t time.Time) string {
+    // ตั้งค่า Location เป็น "Asia/Bangkok"
+    location, err := time.LoadLocation("Asia/Bangkok")
+    if err != nil {
+        return "Failed to load location"
+    }
+
+    // เปลี่ยนเวลาให้เป็นเขตเวลา Bangkok
+    t = t.In(location)
+
+    // กำหนดรูปแบบเวลา
+    thaiTimeFormat := "15:04:05"
+
+    // คืนค่าข้อความรูปแบบเวลา
+    return t.Format(thaiTimeFormat)
+}
+
 func GetClaimsFromContext(ctx *fiber.Ctx) (jwtservice.MapClaims, error) {
 	claims, ok := ctx.Locals("claims").(jwtservice.MapClaims)
 	if !ok {

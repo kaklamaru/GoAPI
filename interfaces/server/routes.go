@@ -80,6 +80,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	teacher.Put("/status/:id", eventController.StatusEvent)
 	
 	app.Get("/events", eventController.GetAllEvent)
+	app.Get("/allowedevents", eventController.AllAllowedEvent)
 	app.Get("/event/:id", eventController.GetEventByID)
 
 	admin.Put("/event/:id", eventController.EditEvent)
@@ -98,5 +99,6 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 	student.Post("/outside",outsideController.CreateOutside)
 	student.Get("/outside/:id",outsideController.GetOutsideByID)
+	
 	student.Get("/download/:id",outsideController.DownloadPDF)
 }

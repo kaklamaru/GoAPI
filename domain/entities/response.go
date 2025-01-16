@@ -5,7 +5,8 @@ import "time"
 type EventResponse struct {
 	EventID        uint      `json:"event_id"`
 	EventName      string    `json:"event_name"`
-	StartDate      time.Time `json:"start_date"`
+	StartDate      string `json:"start_date"`
+	StartTime      string `json:"start_time"`
 	WorkingHour    uint      `json:"working_hour"`
 	Limit          uint      `json:"limit"`
 	FreeSpace      uint      `json:"free_space"`
