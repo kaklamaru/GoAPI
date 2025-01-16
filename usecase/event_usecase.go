@@ -19,8 +19,9 @@ type EventUsecase interface {
 	buildPermission(branches []uint, years []uint) (*Permission, error)
 	ToggleEventStatus(eventID uint, userID uint) error
 	AllAllowedEvent() ([]entities.EventResponse, error)
+	AllCurrentEvent() ([]entities.EventResponse, error)
+	
 }
-
 type Permission struct {
 	BranchIDs      string `json:"branches"`
 	Years          string `json:"years"`
@@ -168,8 +169,25 @@ func (u *eventUsecase) AllAllowedEvent() ([]entities.EventResponse, error) {
 	}
 	return res, nil
 }
-
-
+func (u *eventUsecase) AllCurrentEvent() ([]entities.EventResponse, error) {
+	events, err := u.eventRepo.AllCurrentEvent()
+	if err != nil {
+		return nil, err
+	}
+	var res []entities.EventResponse
+	for _, event := range events {
+		count, err := u.insideRepo.CountEventInside(event.EventID)
+		if err != nil {
+			return nil, err
+		}
+		mappedEvent, err := mapEventResponse(event, count)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, *mappedEvent)
+	}
+	return res, nil
+}
 
 func (u *eventUsecase) GetEventByID(id uint) (*entities.EventResponse, error) {
 	event, err := u.eventRepo.GetEventByID(id)
@@ -201,7 +219,6 @@ func (u *eventUsecase) EditEvent(eventID uint, req *EventRequest, userID uint) e
 	if err != nil {
 		return fmt.Errorf("invalid start date format")
 	}
-
 
 	permission, err := u.buildPermission(req.Branches, req.Years)
 	if err != nil {
@@ -237,7 +254,6 @@ func (u *eventUsecase) DeleteEvent(eventID uint, userID uint) error {
 func (u *eventUsecase) CheckBranch(branchID uint) (bool, error) {
 	return u.branchRepo.BranchExists(branchID)
 }
-
 
 func mapEventResponse(event entities.Event, count uint) (*entities.EventResponse, error) {
 	branches, err := utility.DecodeIDs(event.BranchIDs)

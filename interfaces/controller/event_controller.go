@@ -74,6 +74,15 @@ func (c *EventController) AllAllowedEvent(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusOK).JSON(events)
 }
+func (c *EventController) AllCurrentEvent(ctx *fiber.Ctx) error {
+	events, err := c.usecase.AllCurrentEvent()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Unable to retrieve events",
+		})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(events)
+}
 
 
 

@@ -22,6 +22,7 @@ type EventRepository interface {
 	ToggleEventStatus(eventID uint) error
 
 	AllAllowedEvent() ([]entities.Event, error)
+	AllCurrentEvent() ([]entities.Event, error)
 }
 
 type eventRepository struct {
@@ -55,10 +56,10 @@ func (r *eventRepository) AllAllowedEvent() ([]entities.Event, error) {
 	return events, nil
 }
 
-func (r *eventRepository) AllCurrentEvent() ([]entities.Event,error){
+func (r *eventRepository) AllCurrentEvent() ([]entities.Event, error) {
 	var events []entities.Event
 	today := time.Now()
-    futureDate := today.AddDate(0, 0, 30)
+	futureDate := today.AddDate(0, 1, 0)
 	if err := r.db.Preload("Teacher").Where("start_date BETWEEN ? AND ?", today, futureDate).Find(&events).Error; err != nil {
 		return nil, err
 	}
