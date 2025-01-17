@@ -8,6 +8,7 @@ import (
 	"RESTAPI/infrastructure/middleware"
 	"RESTAPI/interfaces/controller"
 	"RESTAPI/usecase"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -44,7 +45,10 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	app.Post("/register/student", userController.RegisterStudent)
 	app.Post("/register/teacher", userController.RegisterTeacher)
 	app.Post("/login", userController.Login)
-
+	app.Get("/check", func(c *fiber.Ctx) error {
+		fmt.Println("hello")
+		return c.SendString("Hello, world!")
+	})
 	protected := app.Group("/protected", middleware.JWTMiddlewareFromCookie(jwtService))
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
 	teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
