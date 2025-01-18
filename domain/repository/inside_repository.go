@@ -19,6 +19,7 @@ type EventInsideRepository interface {
     UpdateFile(eventID uint, userID uint, filePath string) error 
     GetFilePathByEvent(eventID uint, userID uint) (string, error) 
     GetFilePath(eventID uint,userID uint) (string, error)
+    MyChecklist(userID uint) ([]entities.EventInside,error)
 
 }
 
@@ -70,7 +71,6 @@ func (r *eventInsideRepository) JoinEventInside(eventInside *entities.EventInsid
     if err := tx.Commit(); err != nil {
         return fmt.Errorf("failed to commit transaction: %w", err)
     }
-
     return nil
 }
 
@@ -122,42 +122,7 @@ func (r *eventInsideRepository) UnJoinEventInside(eventID uint, userID uint, txM
     return nil
 }
 
-func (r *eventInsideRepository) UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error {
-	updates := map[string]interface{}{
-		"status":  status,
-		"comment": comment,
-	}
-
-	if err := r.db.Model(&entities.EventInside{}).
-		Where("event_id = ? AND user = ?", eventID, userID).
-		Updates(updates).Error; err != nil {
-		return fmt.Errorf("failed to update event: %w", err)
-	}
-	return nil
-}
-
-func (r *eventInsideRepository) CountEventInside(eventID uint) (uint, error) {
-	var count int64
-
-	if err := r.db.Model(&entities.EventInside{}).Where("event_id = ?", eventID).Count(&count).Error; err != nil {
-		return 0, fmt.Errorf("failed to count events: %w", err)
-	}
-	return uint(count), nil
-}
-
-func (r *eventInsideRepository) IsUserJoinedEvent(eventID uint, userID uint) (bool, error) {
-    var count int64
-    if err := r.db.Model(&entities.EventInside{}).
-        Where("event_id = ? AND user = ?", eventID, userID).
-        Count(&count).Error; err != nil {
-        return false, fmt.Errorf("failed to query event inside: %w", err)
-    }
-
-    return count > 0, nil
-}
-
 func (r *eventInsideRepository) UpdateFile(eventID uint, userID uint, filePath string) error {
-
     if err := r.db.Model(&entities.EventInside{}).
         Where("event_id = ? AND user = ?", eventID, userID).
         Update("file_pdf", filePath).Error; err != nil {
@@ -169,7 +134,6 @@ func (r *eventInsideRepository) UpdateFile(eventID uint, userID uint, filePath s
 func (r *eventInsideRepository) GetFilePathByEvent(eventID uint, userID uint) (string, error) {
     var filePath string
 
-    // ตรวจสอบว่า eventID และ userID มีอยู่จริงหรือไม่
     var count int64
     err := r.db.Model(&entities.EventInside{}).
         Where("event_id = ? AND user = ?", eventID, userID).
@@ -180,7 +144,6 @@ func (r *eventInsideRepository) GetFilePathByEvent(eventID uint, userID uint) (s
     if count == 0 {
         return "", fmt.Errorf("eventID %d and userID %d not found", eventID, userID)
     }
-
     // ดึงค่า file_pdf ถ้ามี event และ user อยู่จริง
     err = r.db.Model(&entities.EventInside{}).
         Where("event_id = ? AND user = ?", eventID, userID).
@@ -188,7 +151,6 @@ func (r *eventInsideRepository) GetFilePathByEvent(eventID uint, userID uint) (s
     if err != nil {
         return "", fmt.Errorf("failed to fetch file path: %w", err)
     }
-
     return filePath, nil
 }
 
@@ -206,5 +168,50 @@ func (r *eventInsideRepository) GetFilePath(eventID uint, userID uint) (string, 
     }
     return filePath, nil
 }
+
+func (r *eventInsideRepository) MyChecklist(userID uint) ([]entities.EventInside, error) {
+    var checklist []entities.EventInside
+    if err := r.db.Where("certifier = ?", userID).Find(&checklist).Error; err != nil {
+        return nil, err
+    }
+    return checklist, nil
+}
+
+
+
+
+func (r *eventInsideRepository) UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error {
+	updates := map[string]interface{}{
+		"status":  status,
+		"comment": comment,
+	}
+	if err := r.db.Model(&entities.EventInside{}).
+		Where("event_id = ? AND user = ?", eventID, userID).
+		Updates(updates).Error; err != nil {
+		return fmt.Errorf("failed to update event: %w", err)
+	}
+	return nil
+}
+
+func (r *eventInsideRepository) CountEventInside(eventID uint) (uint, error) {
+	var count int64
+	if err := r.db.Model(&entities.EventInside{}).Where("event_id = ?", eventID).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("failed to count events: %w", err)
+	}
+	return uint(count), nil
+}
+
+func (r *eventInsideRepository) IsUserJoinedEvent(eventID uint, userID uint) (bool, error) {
+    var count int64
+    if err := r.db.Model(&entities.EventInside{}).
+        Where("event_id = ? AND user = ?", eventID, userID).
+        Count(&count).Error; err != nil {
+        return false, fmt.Errorf("failed to query event inside: %w", err)
+    }
+
+    return count > 0, nil
+}
+
+
 
 

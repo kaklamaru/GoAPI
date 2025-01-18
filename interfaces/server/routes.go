@@ -106,4 +106,9 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	student.Get("/outside/:id",outsideController.GetOutsideByID)
 	
 	student.Get("/download/:id",outsideController.DownloadPDF)
+
+
+	teacher.Get("/checklist",insideController.MyChecklist)
+	teacher.Get("/myevents",eventController.MyEvent)
+	admin.Get("/myevents",eventController.MyEvent)
 }

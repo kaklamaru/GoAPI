@@ -23,6 +23,7 @@ type EventRepository interface {
 
 	AllAllowedEvent() ([]entities.Event, error)
 	AllCurrentEvent() ([]entities.Event, error)
+	MyEvent(userID uint) ([]entities.Event,error)
 }
 
 type eventRepository struct {
@@ -43,6 +44,14 @@ func (r *eventRepository) CreateEvent(event *entities.Event) error {
 func (r *eventRepository) GetAllEvent() ([]entities.Event, error) {
 	var events []entities.Event
 	if err := r.db.Preload("Teacher").Find(&events).Error; err != nil {
+		return nil, err
+	}
+	return events, nil
+}
+
+func (r *eventRepository) MyEvent(userID uint) ([]entities.Event,error){
+	var events []entities.Event
+	if err := r.db.Preload("Teacher").Where("creator = ?",userID).Find(&events).Error; err != nil {
 		return nil, err
 	}
 	return events, nil

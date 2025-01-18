@@ -19,6 +19,7 @@ type EventInsideUsecase interface{
 	CountEventInside(eventID uint) (uint,error)
 	UploadFile(file *multipart.FileHeader, eventID uint, userID uint) error 	
 	GetFile(eventID uint,userID uint) (string,error)
+    MyChecklist(userID uint) ([]entities.EventInside,error)
 
 }
 
@@ -105,10 +106,6 @@ func (u *eventInsideUsecase) JoinEventInside(eventID uint, userID uint) error {
 }
 
 func (u *eventInsideUsecase) UnJoinEventInside(eventID uint, userID uint) error {
-    // if eventID == 0 || userID == 0 {
-    //     return fmt.Errorf("invalid eventID or userID")
-    // }
-
     student, err := u.userRepo.GetStudentByUserID(userID)
     if err != nil || student == nil {
         return fmt.Errorf("user not found or not a student")
@@ -134,54 +131,37 @@ func (u *eventInsideUsecase) UnJoinEventInside(eventID uint, userID uint) error 
     return nil
 }
 
-func (u *eventInsideUsecase) UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error{
-
-	return u.insideRepo.UpdateEventStatusAndComment(eventID,userID,status,comment)
-}
-
-func (u *eventInsideUsecase) CountEventInside(eventID uint) (uint,error){
-	
-	return u.insideRepo.CountEventInside(eventID)
-}
-
 func (u *eventInsideUsecase) UploadFile(file *multipart.FileHeader, eventID uint, userID uint) error {
-    // ตรวจสอบ Content-Type ของไฟล์
     if file.Header.Get("Content-Type") != "application/pdf" {
         return fmt.Errorf("only PDF files are allowed")
     }
-
-
     // ค้นหาว่า event นี้มีการบันทึกไฟล์ไว้หรือยัง
     currentFilePath, err := u.insideRepo.GetFilePathByEvent(eventID, userID)
     if err != nil {
         return fmt.Errorf("failed to fetch current file path: %w", err)
     }
 
-    // ถ้ามีไฟล์เก่าอยู่ ให้ลบไฟล์เก่าก่อน (ถ้าต้องการเขียนทับไฟล์)
+    // ถ้ามีไฟล์เก่าอยู่ ให้ลบไฟล์เก่าก่อน 
     if currentFilePath != "" {
         removeErr := os.Remove(currentFilePath)
         if removeErr != nil {
             return fmt.Errorf("failed to remove old file: %v", removeErr)
         }
     }
-
     // บันทึกไฟล์ใหม่
     path, err := filesystem.SaveFile(file, userID)
     if err != nil {
         return fmt.Errorf("failed to save file: %w", err)
     }
-
     // อัปเดตฐานข้อมูลด้วย path ใหม่
     err = u.insideRepo.UpdateFile(eventID, userID, path)
     if err != nil {
-        // หากเกิดข้อผิดพลาดในการบันทึกฐานข้อมูล ลบไฟล์ที่บันทึกแล้ว
         removeErr := os.Remove(path)
         if removeErr != nil {
             return fmt.Errorf("failed to update database and remove file: %v, cleanup error: %w", err, removeErr)
         }
         return fmt.Errorf("failed to update database: %w", err)
     }
-
     return nil
 }
 
@@ -191,7 +171,34 @@ func (u *eventInsideUsecase) GetFile(eventID uint, userID uint) (string, error) 
     if err != nil {
         return "", err
     }
-
     return filePath, nil
 }
+
+func (u *eventInsideUsecase) MyChecklist(userID uint) ([]entities.EventInside,error){
+    return u.insideRepo.MyChecklist(userID)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+func (u *eventInsideUsecase) UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error{
+	return u.insideRepo.UpdateEventStatusAndComment(eventID,userID,status,comment)
+}
+
+func (u *eventInsideUsecase) CountEventInside(eventID uint) (uint,error){
+	return u.insideRepo.CountEventInside(eventID)
+}
+
+
+
 

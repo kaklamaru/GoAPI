@@ -20,6 +20,7 @@ type EventUsecase interface {
 	ToggleEventStatus(eventID uint, userID uint) error
 	AllAllowedEvent() ([]entities.EventResponse, error)
 	AllCurrentEvent() ([]entities.EventResponse, error)
+	MyEvent(userID uint) ([]entities.EventResponse, error)
 	
 }
 type Permission struct {
@@ -169,6 +170,27 @@ func (u *eventUsecase) AllAllowedEvent() ([]entities.EventResponse, error) {
 	}
 	return res, nil
 }
+
+func (u *eventUsecase) MyEvent(userID uint) ([]entities.EventResponse, error) {
+	events, err := u.eventRepo.MyEvent(userID)
+	if err != nil {
+		return nil, err
+	}
+	var res []entities.EventResponse
+	for _, event := range events {
+		count, err := u.insideRepo.CountEventInside(event.EventID)
+		if err != nil {
+			return nil, err
+		}
+		mappedEvent, err := mapEventResponse(event, count)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, *mappedEvent)
+	}
+	return res, nil
+}
+
 func (u *eventUsecase) AllCurrentEvent() ([]entities.EventResponse, error) {
 	events, err := u.eventRepo.AllCurrentEvent()
 	if err != nil {

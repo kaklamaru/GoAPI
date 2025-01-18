@@ -55,9 +55,33 @@ func (c *EventController) CreateEvent(ctx *fiber.Ctx) error {
 		"message": "Create successfully",
 	})
 }
-
 func (c *EventController) GetAllEvent(ctx *fiber.Ctx) error {
 	events, err := c.usecase.GetAllEvent()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Unable to retrieve events",
+		})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(events)
+}
+
+
+func (c *EventController) MyEvent(ctx *fiber.Ctx) error {
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid JWT claims",
+		})
+	}
+
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id in claims",
+		})
+	}
+	userID := uint(userIDFloat)
+	events, err := c.usecase.MyEvent(userID)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Unable to retrieve events",
@@ -83,9 +107,6 @@ func (c *EventController) AllCurrentEvent(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusOK).JSON(events)
 }
-
-
-
 func (c *EventController) GetEventByID(ctx *fiber.Ctx) error {
 	id, err := utility.GetUintID(ctx)
 	if err != nil {
@@ -186,8 +207,6 @@ func (c *EventController) StatusEvent(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
-
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -195,9 +214,6 @@ func (c *EventController) StatusEvent(ctx *fiber.Ctx) error {
 		})
 	}
 	userID := uint(userIDFloat)
-
-
-
     if err := c.usecase.ToggleEventStatus(id,userID); err != nil {
         return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "error": "Failed to toggle event status",
