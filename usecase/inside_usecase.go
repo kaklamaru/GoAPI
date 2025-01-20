@@ -19,7 +19,7 @@ type EventInsideUsecase interface{
 	CountEventInside(eventID uint) (uint,error)
 	UploadFile(file *multipart.FileHeader, eventID uint, userID uint) error 	
 	GetFile(eventID uint,userID uint) (string,error)
-    MyChecklist(userID uint) ([]entities.EventInside,error)
+    MyChecklist(userID uint,eventID uint) ([]entities.MyChecklist,error)
 
 }
 
@@ -166,7 +166,6 @@ func (u *eventInsideUsecase) UploadFile(file *multipart.FileHeader, eventID uint
 }
 
 func (u *eventInsideUsecase) GetFile(eventID uint, userID uint) (string, error) {
-    // ดึง path ของไฟล์จาก repository
     filePath, err := u.insideRepo.GetFilePath(eventID, userID)
     if err != nil {
         return "", err
@@ -174,22 +173,29 @@ func (u *eventInsideUsecase) GetFile(eventID uint, userID uint) (string, error) 
     return filePath, nil
 }
 
-func (u *eventInsideUsecase) MyChecklist(userID uint) ([]entities.EventInside,error){
-    return u.insideRepo.MyChecklist(userID)
+func (u *eventInsideUsecase) MyChecklist(userID uint,eventID uint) ([]entities.MyChecklist,error){
+    checklist,err:=u.insideRepo.MyChecklist(userID,eventID)
+    if err != nil {
+		return nil, err
+	}
+    var res []entities.MyChecklist
+    for _, inside := range checklist {
+		mappedEvent := entities.MyChecklist{
+            EventID: inside.EventId,
+            UserID: inside.User,
+            TitleName: inside.Student.TitleName,
+            FirstName: inside.Student.FirstName,
+            LastName: inside.Student.LastName,
+            Code: inside.Student.Code,
+            Certifier: inside.Certifier,
+            Status: inside.Status,
+            Comment: inside.Comment,
+            FilePDF: inside.FilePDF,
+        }
+		res = append(res,mappedEvent)
+	}
+    return res,nil
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 func (u *eventInsideUsecase) UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error{
 	return u.insideRepo.UpdateEventStatusAndComment(eventID,userID,status,comment)
@@ -198,7 +204,3 @@ func (u *eventInsideUsecase) UpdateEventStatusAndComment(eventID uint, userID ui
 func (u *eventInsideUsecase) CountEventInside(eventID uint) (uint,error){
 	return u.insideRepo.CountEventInside(eventID)
 }
-
-
-
-

@@ -19,7 +19,7 @@ type EventInsideRepository interface {
     UpdateFile(eventID uint, userID uint, filePath string) error 
     GetFilePathByEvent(eventID uint, userID uint) (string, error) 
     GetFilePath(eventID uint,userID uint) (string, error)
-    MyChecklist(userID uint) ([]entities.EventInside,error)
+    MyChecklist(userID uint,eventID uint) ([]entities.EventInside, error)
 
 }
 
@@ -169,13 +169,16 @@ func (r *eventInsideRepository) GetFilePath(eventID uint, userID uint) (string, 
     return filePath, nil
 }
 
-func (r *eventInsideRepository) MyChecklist(userID uint) ([]entities.EventInside, error) {
+func (r *eventInsideRepository) MyChecklist(userID uint,eventID uint) ([]entities.EventInside, error) {
     var checklist []entities.EventInside
-    if err := r.db.Where("certifier = ?", userID).Find(&checklist).Error; err != nil {
+    if err := r.db.Preload("Event").Preload("Student.Branch.Faculty").Where("event_id = ? ",eventID).Find(&checklist).Error; err != nil {
         return nil, err
     }
     return checklist, nil
 }
+
+
+
 
 
 

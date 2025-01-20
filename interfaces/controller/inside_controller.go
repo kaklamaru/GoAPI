@@ -3,6 +3,7 @@ package controller
 import (
 	"RESTAPI/usecase"
 	"RESTAPI/utility"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -128,7 +129,7 @@ func (c *EventInsideController) UploadFile(ctx *fiber.Ctx) error {
 	})
 }
 
-func (c *EventInsideController) GetFile(ctx *fiber.Ctx) error {
+func (c *EventInsideController) GetFileForMe(ctx *fiber.Ctx) error {
 	id, err := utility.GetUintID(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -161,21 +162,44 @@ func (c *EventInsideController) GetFile(ctx *fiber.Ctx) error {
     return ctx.SendFile(filePath)
 }
 
-func (c *EventInsideController) MyChecklist(ctx *fiber.Ctx) error{
-	// id, err := utility.GetUintID(ctx)
-	// if err != nil {
-	// 	return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"error": "Invalid event ID",
-	// 	})
-	// }
+func (c *EventInsideController) GetFile(ctx *fiber.Ctx) error{
+	eventID, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid event ID",
+		})
+	}
+	idStr := ctx.Params("userid")
+	idInt, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid UserID",
+		})
+	}
+	userID := uint(idInt)
+	filePath, err := c.insideUsecase.GetFile(eventID, userID)
+    if err != nil {
+        return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "error": err.Error(),
+        })
+    }
+    return ctx.SendFile(filePath)
 
+}
+
+func (c *EventInsideController) MyChecklist(ctx *fiber.Ctx) error{
+	id, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid event ID",
+		})
+	}
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Failed to get user claims",
 		})
 	}
-
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -183,9 +207,10 @@ func (c *EventInsideController) MyChecklist(ctx *fiber.Ctx) error{
 		})
 	}
 	userID := uint(userIDFloat)
-	
-	checklist,err:= c.insideUsecase.MyChecklist(userID)
-
+	checklist,err:= c.insideUsecase.MyChecklist(userID,id)
+	if err != nil {
+		return err
+	}
 	return ctx.Status(fiber.StatusOK).JSON(checklist)
 }
 

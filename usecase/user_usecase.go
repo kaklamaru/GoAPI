@@ -5,6 +5,7 @@ import (
 	"RESTAPI/domain/repository"
 	"RESTAPI/domain/transaction"
 	"errors"
+	"fmt"
 )
 
 type UserUsecase interface {
@@ -17,6 +18,8 @@ type UserUsecase interface {
 	EditTeacherByID(teacher *entities.Teacher) error
 	GetAllStudent() ([]entities.StudentResponse, error)
 	GetAllTeacher() ([]entities.Teacher, error)
+	EditRole(userID uint,role string) error
+	
 }
 
 type userUsecase struct {
@@ -133,4 +136,14 @@ func (u *userUsecase) GetAllStudent() ([]entities.StudentResponse, error) {
 
 func (u *userUsecase) GetAllTeacher() ([]entities.Teacher, error) {
 	return u.teacherRepo.GetAllTeacher()
+}
+
+func (u *userUsecase) EditRole(userID uint,role string) error{
+	user,err :=u.userRepo.GetUser(userID)
+	if err != nil {
+		return fmt.Errorf("user not found")
+	}
+	user.Role=role
+	return u.userRepo.EditRole(*user)
+
 }

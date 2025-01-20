@@ -3,20 +3,20 @@ package entities
 import "time"
 
 type EventResponse struct {
-	EventID        uint      `json:"event_id"`
-	EventName      string    `json:"event_name"`
+	EventID        uint   `json:"event_id"`
+	EventName      string `json:"event_name"`
 	StartDate      string `json:"start_date"`
 	StartTime      string `json:"start_time"`
-	WorkingHour    uint      `json:"working_hour"`
-	Limit          uint      `json:"limit"`
-	FreeSpace      uint      `json:"free_space"`
-	Location       string    `json:"location"`
-	Detail         string    `json:"detail"`
-	Status         bool      `json:"status"`
-	BranchIDs      []uint    `json:"branches"`
-	Years          []uint    `json:"years"`
-	AllowAllBranch bool      `json:"allow_all_branch"`
-	AllowAllYear   bool      `json:"allow_all_year"`
+	WorkingHour    uint   `json:"working_hour"`
+	Limit          uint   `json:"limit"`
+	FreeSpace      uint   `json:"free_space"`
+	Location       string `json:"location"`
+	Detail         string `json:"detail"`
+	Status         bool   `json:"status"`
+	BranchIDs      []uint `json:"branches"`
+	Years          []uint `json:"years"`
+	AllowAllBranch bool   `json:"allow_all_branch"`
+	AllowAllYear   bool   `json:"allow_all_year"`
 	Creator        struct {
 		UserID    uint   `json:"user_id"`
 		TitleName string `json:"title_name"`
@@ -55,4 +55,17 @@ type OutsideResponse struct {
 	WorkingHour uint            `json:"working_hour"`
 	Intendant   string          `json:"intendent"`
 	Student     StudentResponse `json:"student"`
+}
+
+type MyChecklist struct {
+	EventID   uint   `json:"event_id"`
+	UserID    uint   `json:"user_id"`
+	TitleName string `json:"title_name"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Code      string `json:"code"`
+	Certifier uint    `json:"certifier"`
+	Status    bool    `json:"status"`
+	Comment   string  `json:"comment"`
+	FilePDF   string  `json:"file_pdf"`
 }

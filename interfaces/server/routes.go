@@ -51,11 +51,14 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	})
 	protected := app.Group("/protected", middleware.JWTMiddlewareFromCookie(jwtService))
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
+	staff:=protected.Group("/staff",middleware.RoleMiddleware("staff"))
 	teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
 	student := protected.Group("/student", middleware.RoleMiddleware("student"))
-	// adminTeacher := protected.Group("/admin-teacher", middleware.RoleMiddleware("admin", "teacher"))
+	
+	admin.Put("/role/:id",userController.EditRole)
 	admin.Post("/event", eventController.CreateEvent)
 	teacher.Post("/event", eventController.CreateEvent)
+	staff.Post("/event", eventController.CreateEvent)
 
 	protected.Get("/userbyclaim", userController.GetUserByClaims)
 
@@ -86,6 +89,9 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	app.Get("/events", eventController.GetAllEvent)
 	app.Get("/allowedevents", eventController.AllAllowedEvent)
 	app.Get("/currentevents", eventController.AllCurrentEvent)
+	teacher.Get("/myevents",eventController.MyEvent)
+	admin.Get("/myevents",eventController.MyEvent)
+
 	app.Get("/event/:id", eventController.GetEventByID)
 
 	admin.Put("/event/:id", eventController.EditEvent)
@@ -100,15 +106,14 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 	student.Post("upload/:id", insideController.UploadFile)
 
-	student.Get("/file/:id", insideController.GetFile)
+	student.Get("/file/:id", insideController.GetFileForMe)
+	teacher.Get("/file/:id/:userid", insideController.GetFile)
+	admin.Get("/file/:id/:userid", insideController.GetFile)
 
+	teacher.Get("/checklist/:id",insideController.MyChecklist)
+	admin.Get("/checklist/:id",insideController.MyChecklist)
+	
 	student.Post("/outside",outsideController.CreateOutside)
 	student.Get("/outside/:id",outsideController.GetOutsideByID)
-	
 	student.Get("/download/:id",outsideController.DownloadPDF)
-
-
-	teacher.Get("/checklist",insideController.MyChecklist)
-	teacher.Get("/myevents",eventController.MyEvent)
-	admin.Get("/myevents",eventController.MyEvent)
 }

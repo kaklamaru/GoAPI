@@ -13,6 +13,9 @@ type UserRepository interface {
 	GetUserByEmail(email string) (*entities.User, error)
 	GetStudentByUserID(userID uint) (*entities.Student, error)
 	GetTeacherByUserID(userID uint) (*entities.Teacher, error)
+	GetUser(userID uint) (*entities.User,error)
+	EditRole(user entities.User) error
+
 }
 
 type userRepository struct {
@@ -38,4 +41,17 @@ func (r *userRepository) GetUserByEmail(email string) (*entities.User, error) {
 		return nil, result.Error
 	}
 	return &user, nil
+}
+
+func (r *userRepository) GetUser(userID uint) (*entities.User,error){
+	var user entities.User
+	result := r.db.Where("user_id = ?",userID).First(&user)
+	if result.Error != nil {
+		return nil,result.Error
+	}
+	return &user,nil
+}
+
+func (r *userRepository) EditRole(user entities.User) error{
+	return r.db.Save(user).Error
 }
