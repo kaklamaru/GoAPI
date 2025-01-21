@@ -21,7 +21,6 @@ type EventUsecase interface {
 	AllAllowedEvent() ([]entities.EventResponse, error)
 	AllCurrentEvent() ([]entities.EventResponse, error)
 	MyEvent(userID uint) ([]entities.EventResponse, error)
-	
 }
 type Permission struct {
 	BranchIDs      string `json:"branches"`
@@ -34,6 +33,7 @@ type EventRequest struct {
 	EventName   string `json:"event_name"`
 	StartDate   string `json:"start_date"`
 	WorkingHour uint   `json:"working_hour"`
+	SchoolYear  uint   `json:"school_year"`
 	Location    string `json:"location"`
 	FreeSpace   uint   `json:"free_space"`
 	Detail      string `json:"detail"`
@@ -118,6 +118,7 @@ func (u *eventUsecase) CreateEvent(req *EventRequest, userID uint) error {
 	event := &entities.Event{
 		EventName:      req.EventName,
 		StartDate:      startDate,
+		SchoolYear:     req.SchoolYear,
 		FreeSpace:      req.FreeSpace,
 		WorkingHour:    req.WorkingHour,
 		Detail:         req.Detail,
@@ -250,6 +251,7 @@ func (u *eventUsecase) EditEvent(eventID uint, req *EventRequest, userID uint) e
 	event.EventName = req.EventName
 	event.StartDate = startDate
 	event.FreeSpace = req.FreeSpace
+	event.SchoolYear = req.SchoolYear
 	event.WorkingHour = req.WorkingHour
 	event.Location = req.Location
 	event.Detail = req.Detail
@@ -294,6 +296,7 @@ func mapEventResponse(event entities.Event, count uint) (*entities.EventResponse
 		EventName:      event.EventName,
 		StartDate:      utility.FormatToThaiDate(event.StartDate),
 		StartTime:      utility.FormatToThaiTime(event.StartDate),
+		SchoolYear: event.SchoolYear,
 		WorkingHour:    event.WorkingHour,
 		Limit:          limit,
 		FreeSpace:      event.FreeSpace,

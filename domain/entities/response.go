@@ -8,6 +8,7 @@ type EventResponse struct {
 	StartDate      string `json:"start_date"`
 	StartTime      string `json:"start_time"`
 	WorkingHour    uint   `json:"working_hour"`
+	SchoolYear     uint   `json:"school_year"`
 	Limit          uint   `json:"limit"`
 	FreeSpace      uint   `json:"free_space"`
 	Location       string `json:"location"`
@@ -31,6 +32,7 @@ type OutsideRequest struct {
 	EventName   string `json:"event_name"`
 	StartDate   string `json:"start_date"`
 	Location    string `json:"location"`
+	SchoolYear  uint   `json:"school_year"`
 	WorkingHour uint   `json:"working_hour"`
 	Intendant   string `json:"intendent"`
 }
@@ -52,6 +54,7 @@ type OutsideResponse struct {
 	EventName   string          `json:"event_name"`
 	Location    string          `json:"location"`
 	StartDate   time.Time       `json:"start_date"`
+	SchoolYear  uint            `json:"school_year"`
 	WorkingHour uint            `json:"working_hour"`
 	Intendant   string          `json:"intendent"`
 	Student     StudentResponse `json:"student"`
@@ -64,8 +67,8 @@ type MyChecklist struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Code      string `json:"code"`
-	Certifier uint    `json:"certifier"`
-	Status    bool    `json:"status"`
-	Comment   string  `json:"comment"`
-	FilePDF   string  `json:"file_pdf"`
+	Certifier uint   `json:"certifier"`
+	Status    bool   `json:"status"`
+	Comment   string `json:"comment"`
+	FilePDF   string `json:"file_pdf"`
 }

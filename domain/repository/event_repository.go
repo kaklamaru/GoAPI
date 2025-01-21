@@ -121,6 +121,7 @@ func (r *eventRepository) EditEvent(event *entities.Event) error {
 		"free_space":       event.FreeSpace,
 		"working_hour":     event.WorkingHour,
 		"location":         event.Location,
+		"school_year":	event.SchoolYear,
 		"detail":           event.Detail,
 		"branch_ids":       string(branchIDsJSON),
 		"years":            string(yearIDsJSON),
@@ -204,3 +205,4 @@ func (r *eventRepository) ToggleEventStatus(eventID uint) error {
 		Where("event_id = ?", eventID).
 		Update("status", gorm.Expr("NOT status")).Error
 }
+

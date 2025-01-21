@@ -204,3 +204,7 @@ func (u *eventInsideUsecase) UpdateEventStatusAndComment(eventID uint, userID ui
 func (u *eventInsideUsecase) CountEventInside(eventID uint) (uint,error){
 	return u.insideRepo.CountEventInside(eventID)
 }
+
+// func (u *eventInsideUsecase) AllInsideThisYears() (entities.EventInside,error){
+
+// }
