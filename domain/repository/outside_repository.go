@@ -11,6 +11,7 @@ import (
 type OutsideRepository interface {
 	CreateOutside(outside *entities.EventOutside) (uint,error)
 	GetOutsideByID(id uint) (*entities.EventOutside,error)
+	AllOutsideThisYears(userID uint, year uint) ([]entities.EventOutside, error) 
 }
 
 type outsideRepository struct {
@@ -39,4 +40,12 @@ func (r *outsideRepository) GetOutsideByID(id uint) (*entities.EventOutside,erro
 		return nil, fmt.Errorf("failed to retrieve event: %w", err)
 	}
 	return &outside, nil
+}
+
+func (r *outsideRepository) AllOutsideThisYears(userID uint, year uint) ([]entities.EventOutside, error) {
+	var eventOutside []entities.EventOutside
+	if err := r.db.Where("user = ? AND school_year = ?", userID, year).Find(&eventOutside).Error; err != nil {
+		return nil, err
+	}
+	return eventOutside, nil
 }

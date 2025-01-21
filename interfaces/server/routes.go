@@ -33,12 +33,12 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	eventRepo := repository.NewEventRepository(db.GetDb())
 
 	insideRepo := repository.NewEventInsideRepository(db.GetDb())
-	eventUsecase := usecase.NewEventUsecase(eventRepo, branchRepo, insideRepo)
+	outsideRepo := repository.NewOutsideRepository(db.GetDb())
+	eventUsecase := usecase.NewEventUsecase(eventRepo, branchRepo, insideRepo,outsideRepo)
 	insideUsecase := usecase.NewEventInsideUsecase(insideRepo, userRepo, eventUsecase, txManager)
 	eventController := controller.NewEventController(eventUsecase, txManager)
 	insideController := controller.NewEventInsideController(insideUsecase, eventUsecase, userUsecase)
 
-	outsideRepo := repository.NewOutsideRepository(db.GetDb())
 	outsideUsecase := usecase.NewOutsideUsecase(outsideRepo)
 	outsideController := controller.NewOutsideController(outsideUsecase)
 
@@ -92,8 +92,11 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	app.Get("/event/:id", eventController.GetEventByID)
 	admin.Put("/event/:id", eventController.EditEvent)
 	teacher.Put("/event/:id", eventController.EditEvent)
-	admin.Delete("/event/:id", eventController.DeleteEvent)
+
+	// admin.Delete("/event/:id", eventController.DeleteEvent)
 	teacher.Delete("/event/:id", eventController.DeleteEvent)
+	admin.Delete("/event/:id", eventController.DeleteEvent)
+
 	protected.Get("/count/:id", insideController.CountEventInside)
 	student.Post("/join/:id", insideController.JoinEvent)
 	student.Delete("/unjoin/:id", insideController.UnJoinEventInside)
@@ -107,5 +110,5 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	student.Get("/outside/:id",outsideController.GetOutsideByID)
 	student.Get("/download/:id",outsideController.DownloadPDF)
 
-
+	student.Get("myevents/:year",eventController.AllMyEventThisYear)
 }

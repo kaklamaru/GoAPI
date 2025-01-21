@@ -20,18 +20,18 @@ type EventInsideRepository interface {
 	GetFilePathByEvent(eventID uint, userID uint) (string, error)
 	GetFilePath(eventID uint, userID uint) (string, error)
 	MyChecklist(userID uint, eventID uint) ([]entities.EventInside, error)
-	AllInsideThisYears(userID uint) ([]entities.EventInside, error)
+	AllInsideThisYears(userID uint, year uint) ([]entities.EventInside, error)
 }
 
-type eventInsideRepository struct {
+type insideRepository struct {
 	db *gorm.DB
 }
 
 func NewEventInsideRepository(db *gorm.DB) EventInsideRepository {
-	return &eventInsideRepository{db: db}
+	return &insideRepository{db: db}
 }
 
-func (r *eventInsideRepository) JoinEventInside(eventInside *entities.EventInside, txManager transaction.TransactionManager) error {
+func (r *insideRepository) JoinEventInside(eventInside *entities.EventInside, txManager transaction.TransactionManager) error {
 	tx := txManager.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -74,7 +74,7 @@ func (r *eventInsideRepository) JoinEventInside(eventInside *entities.EventInsid
 	return nil
 }
 
-func (r *eventInsideRepository) UnJoinEventInside(eventID uint, userID uint, txManager transaction.TransactionManager) error {
+func (r *insideRepository) UnJoinEventInside(eventID uint, userID uint, txManager transaction.TransactionManager) error {
 	tx := txManager.Begin()
 
 	defer func() {
@@ -122,7 +122,7 @@ func (r *eventInsideRepository) UnJoinEventInside(eventID uint, userID uint, txM
 	return nil
 }
 
-func (r *eventInsideRepository) UpdateFile(eventID uint, userID uint, filePath string) error {
+func (r *insideRepository) UpdateFile(eventID uint, userID uint, filePath string) error {
 	if err := r.db.Model(&entities.EventInside{}).
 		Where("event_id = ? AND user = ?", eventID, userID).
 		Update("file_pdf", filePath).Error; err != nil {
@@ -131,7 +131,7 @@ func (r *eventInsideRepository) UpdateFile(eventID uint, userID uint, filePath s
 	return nil
 }
 
-func (r *eventInsideRepository) GetFilePathByEvent(eventID uint, userID uint) (string, error) {
+func (r *insideRepository) GetFilePathByEvent(eventID uint, userID uint) (string, error) {
 	var filePath string
 
 	var count int64
@@ -154,7 +154,7 @@ func (r *eventInsideRepository) GetFilePathByEvent(eventID uint, userID uint) (s
 	return filePath, nil
 }
 
-func (r *eventInsideRepository) GetFilePath(eventID uint, userID uint) (string, error) {
+func (r *insideRepository) GetFilePath(eventID uint, userID uint) (string, error) {
 	var filePath string
 	// ใช้ GORM เพื่อดึงข้อมูล path ของไฟล์
 	err := r.db.Model(&entities.EventInside{}).
@@ -169,7 +169,7 @@ func (r *eventInsideRepository) GetFilePath(eventID uint, userID uint) (string, 
 	return filePath, nil
 }
 
-func (r *eventInsideRepository) MyChecklist(userID uint, eventID uint) ([]entities.EventInside, error) {
+func (r *insideRepository) MyChecklist(userID uint, eventID uint) ([]entities.EventInside, error) {
 	var checklist []entities.EventInside
 	if err := r.db.Preload("Event").Preload("Student.Branch.Faculty").Where("event_id = ? ", eventID).Find(&checklist).Error; err != nil {
 		return nil, err
@@ -177,7 +177,7 @@ func (r *eventInsideRepository) MyChecklist(userID uint, eventID uint) ([]entiti
 	return checklist, nil
 }
 
-func (r *eventInsideRepository) UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error {
+func (r *insideRepository) UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error {
 	updates := map[string]interface{}{
 		"status":  status,
 		"comment": comment,
@@ -190,7 +190,7 @@ func (r *eventInsideRepository) UpdateEventStatusAndComment(eventID uint, userID
 	return nil
 }
 
-func (r *eventInsideRepository) CountEventInside(eventID uint) (uint, error) {
+func (r *insideRepository) CountEventInside(eventID uint) (uint, error) {
 	var count int64
 	if err := r.db.Model(&entities.EventInside{}).Where("event_id = ?", eventID).Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("failed to count events: %w", err)
@@ -198,7 +198,7 @@ func (r *eventInsideRepository) CountEventInside(eventID uint) (uint, error) {
 	return uint(count), nil
 }
 
-func (r *eventInsideRepository) IsUserJoinedEvent(eventID uint, userID uint) (bool, error) {
+func (r *insideRepository) IsUserJoinedEvent(eventID uint, userID uint) (bool, error) {
 	var count int64
 	if err := r.db.Model(&entities.EventInside{}).
 		Where("event_id = ? AND user = ?", eventID, userID).
@@ -208,18 +208,15 @@ func (r *eventInsideRepository) IsUserJoinedEvent(eventID uint, userID uint) (bo
 	return count > 0, nil
 }
 
-func (r *eventInsideRepository) AllInsideThisYears(userID uint) ([]entities.EventInside, error) {
+func (r *insideRepository) AllInsideThisYears(userID uint, year uint) ([]entities.EventInside, error) {
 	var eventInsides []entities.EventInside
-	year := 2568
-	err := r.db.Joins("JOIN events ON events.event_id = event_insides.event_id").
-		Where("event_insides.user_id = ?", userID).
+	// year := 2568
+	err := r.db.Preload("Event").Joins("JOIN events ON events.event_id = event_insides.event_id").
+		Where("event_insides.user = ?", userID).
 		Where("events.school_year = ?", year).
 		Find(&eventInsides).Error
 	if err != nil {
-		// Handle error
 		fmt.Println("Error fetching data:", err)
-	} else {
-		fmt.Println("Fetched data:", eventInsides)
 	}
 	return eventInsides, nil
 }

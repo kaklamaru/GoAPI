@@ -72,3 +72,28 @@ type MyChecklist struct {
 	Comment   string `json:"comment"`
 	FilePDF   string `json:"file_pdf"`
 }
+
+type MyOutside struct {
+	EventID     uint   `json:"event_id"`
+	EventName   string `json:"event_name"`
+	Location    string `json:"location"`
+	StartDate   string `json:"start_date"`
+	StartTime   string `json:"start_time"`
+	WorkingHour uint   `json:"working_hour"`
+	SchoolYear  uint   `json:"school_year"`
+	Intendant   string `json:"intendent"`
+	// Status      bool   `json:"status"`
+	// Comment     string `json:"comment"`
+}
+
+type MyInside struct {
+	EventID     uint   `json:"event_id"`
+	EventName   string `json:"event_name"`
+	Location    string `json:"location"`
+	StartDate   string `json:"start_date"`
+	StartTime   string `json:"start_time"`
+	WorkingHour uint   `json:"working_hour"`
+	SchoolYear  uint   `json:"school_year"`
+	Status      bool   `json:"status"`
+	Comment     string `json:"comment"`
+}

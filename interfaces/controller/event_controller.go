@@ -3,6 +3,7 @@ package controller
 import (
 	"RESTAPI/domain/transaction"
 	"RESTAPI/usecase"
+	"strconv"
 
 	"RESTAPI/utility"
 
@@ -171,11 +172,13 @@ func (c *EventController) DeleteEvent(ctx *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
-		return err
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid JWT claims",
+		})
 	}
+
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -223,4 +226,37 @@ func (c *EventController) StatusEvent(ctx *fiber.Ctx) error {
     return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
         "message": "Event status toggled successfully",
     })
+}
+
+func (c *EventController) AllMyEventThisYear(ctx *fiber.Ctx) error {
+	yearStr := ctx.Params("year")
+	yearInt, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid year",
+		})
+	}
+	year := uint(yearInt)
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id in claims",
+		})
+	}
+	userID := uint(userIDFloat)
+	insideEvents, outsideEvents, err := c.usecase.AllMyEventThisYear(userID, year)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"inside_events":  insideEvents,
+		"outside_events": outsideEvents,
+	})
 }

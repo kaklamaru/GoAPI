@@ -156,29 +156,33 @@ func (r *eventRepository) GetEventByID(id uint) (*entities.Event, error) {
 }
 
 func (r *eventRepository) DeleteEvent(id uint) error {
-	event := &entities.Event{}
-
-	if err := r.db.First(event, "event_id = ?", id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("event with ID %d not found", id)
-		}
-		return fmt.Errorf("failed to find event: %w", err)
+	if err := r.db.Where("status = ?",false).Delete(&entities.Event{}, id).Error; err != nil {
+		return fmt.Errorf("failed to delete event with ID %d: %w", id, err)
 	}
-
-	var eventInsideCount int64
-	if err := r.db.Model(&entities.EventInside{}).Where("event_id = ?", id).Count(&eventInsideCount).Error; err != nil {
-		return fmt.Errorf("failed to check event references: %w", err)
-	}
-
-	if eventInsideCount > 0 {
-		return fmt.Errorf("cannot delete event with ID %d because it is referenced in event_insides", id)
-	}
-
-	if err := r.db.Delete(event).Error; err != nil {
-		return fmt.Errorf("failed to delete event: %w", err)
-	}
-
 	return nil
+	// event := &entities.Event{}
+
+	// if err := r.db.First(event, "event_id = ?", id).Error; err != nil {
+	// 	if errors.Is(err, gorm.ErrRecordNotFound) {
+	// 		return fmt.Errorf("event with ID %d not found", id)
+	// 	}
+	// 	return fmt.Errorf("failed to find event: %w", err)
+	// }
+
+	// var eventInsideCount int64
+	// if err := r.db.Model(&entities.EventInside{}).Where("event_id = ?", id).Count(&eventInsideCount).Error; err != nil {
+	// 	return fmt.Errorf("failed to check event references: %w", err)
+	// }
+
+	// if eventInsideCount > 0 {
+	// 	return fmt.Errorf("cannot delete event with ID %d because it is referenced in event_insides", id)
+	// }
+
+	// if err := r.db.Delete(event).Error; err != nil {
+	// 	return fmt.Errorf("failed to delete event: %w", err)
+	// }
+
+	// return nil
 }
 
 func (r *eventRepository) UpdateEventStatusIfNoSpace() error {
@@ -205,4 +209,5 @@ func (r *eventRepository) ToggleEventStatus(eventID uint) error {
 		Where("event_id = ?", eventID).
 		Update("status", gorm.Expr("NOT status")).Error
 }
+
 

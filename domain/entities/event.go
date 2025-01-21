@@ -23,7 +23,8 @@ type Event struct {
 type EventInside struct {
 	EventId   uint    `gorm:"primaryKey" json:"event_id"`
 	User      uint    `gorm:"primaryKey" json:"user_id"`
-	Event     Event   `gorm:"foreignKey:EventId;references:EventID" json:"event"`
+	// Event     Event   `gorm:"foreignKey:EventId;references:EventID" json:"event"`
+	Event     Event   `gorm:"foreignKey:EventId;references:EventID;constraint:OnDelete:CASCADE;" json:"event"`
 	Student   Student `gorm:"foreignKey:User;references:UserID" json:"student"`
 	Certifier uint    `gorm:"default:null" json:"certifier"`
 	Teacher   Teacher `gorm:"foreignKey:Certifier;references:UserID" json:"teacher"`
@@ -46,7 +47,7 @@ type EventOutside struct {
 	// Teacher     Teacher   `gorm:"foreignKey:Certifier;references:UserID" json:"teacher"`
 	// Status      bool      `json:"status"`
 	// Comment     string    `json:"comment"`
-	FilePDF     string    `gorm:"size:255" json:"file_pdf"`
+	FilePDF string `gorm:"size:255" json:"file_pdf"`
 }
 
 type Done struct {
@@ -56,4 +57,10 @@ type Done struct {
 	Teacher   Teacher `gorm:"foreignKey:Certifier;references:UserID" json:"teacher"`
 	Status    bool    `json:"status"`
 	Comment   string  `json:"comment"`
+}
+
+type News struct {
+	Userid   uint   `gorm:"primaryKey" json:"user_id"`
+	User     User   `gorm:"foreignKey:Userid;references:UserID" json:"student"`
+	TextNews string `json:"text_news"`
 }

@@ -21,6 +21,8 @@ type EventUsecase interface {
 	AllAllowedEvent() ([]entities.EventResponse, error)
 	AllCurrentEvent() ([]entities.EventResponse, error)
 	MyEvent(userID uint) ([]entities.EventResponse, error)
+
+	AllMyEventThisYear(userID uint,year uint) ([]entities.MyInside,[]entities.MyOutside,error)
 }
 type Permission struct {
 	BranchIDs      string `json:"branches"`
@@ -45,13 +47,15 @@ type eventUsecase struct {
 	eventRepo  repository.EventRepository
 	branchRepo repository.BranchRepository
 	insideRepo repository.EventInsideRepository
+	outsideRepo repository.OutsideRepository
 }
 
-func NewEventUsecase(eventRepo repository.EventRepository, branchRepo repository.BranchRepository, insideRepo repository.EventInsideRepository) EventUsecase {
+func NewEventUsecase(eventRepo repository.EventRepository, branchRepo repository.BranchRepository, insideRepo repository.EventInsideRepository,outsideRepo repository.OutsideRepository) EventUsecase {
 	return &eventUsecase{
 		eventRepo:  eventRepo,
 		branchRepo: branchRepo,
 		insideRepo: insideRepo,
+		outsideRepo: outsideRepo,
 	}
 }
 
@@ -335,4 +339,47 @@ func (u *eventUsecase) ToggleEventStatus(eventID uint, userID uint) error {
 		return fmt.Errorf("you do not have permission to edit this event")
 	}
 	return u.eventRepo.ToggleEventStatus(event.EventID)
+}
+
+
+func (u *eventUsecase) AllMyEventThisYear(userID uint,year uint) ([]entities.MyInside,[]entities.MyOutside,error){
+	inside,err:= u.insideRepo.AllInsideThisYears(userID,year)
+	if err != nil {
+		return nil,nil,err
+	}
+	var insideEvents []entities.MyInside
+	for _, event := range inside {
+		mappedEvent := entities.MyInside{
+			EventID: event.EventId,
+			EventName: event.Event.EventName,
+			Location: event.Event.Location,
+			StartDate: utility.FormatToThaiDate(event.Event.StartDate),
+			StartTime: utility.FormatToThaiTime(event.Event.StartDate),
+			WorkingHour: event.Event.WorkingHour,
+			SchoolYear: event.Event.SchoolYear,
+			Status:event.Status,
+			Comment: event.Comment,
+		}
+		insideEvents = append(insideEvents, mappedEvent)
+	}
+	outside,err:=u.outsideRepo.AllOutsideThisYears(userID,year)
+	if err != nil {
+		return nil,nil, err
+	}
+	var outsideEvents []entities.MyOutside
+	for _, event := range outside {
+		mappedEvent := entities.MyOutside{
+			EventID: event.EventID,
+			EventName: event.EventName,
+			Location: event.Location,
+			StartDate: utility.FormatToThaiDate(event.StartDate),
+			StartTime: utility.FormatToThaiTime(event.StartDate),
+			WorkingHour: event.WorkingHour,
+			SchoolYear: event.SchoolYear,
+			Intendant: event.Intendant,
+		}
+		outsideEvents = append(outsideEvents, mappedEvent)
+	}
+
+	return insideEvents,outsideEvents,nil
 }

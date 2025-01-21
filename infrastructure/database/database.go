@@ -71,6 +71,9 @@ func (m *mysqlDatabase) AutoMigrate() error {
 	if err := m.Db.AutoMigrate(&entities.Done{}); err != nil {
 		return fmt.Errorf("failed to migrate EventInside: %w", err)
 	}
+	if err := m.Db.AutoMigrate(&entities.News{}); err != nil {
+		return fmt.Errorf("failed to migrate EventInside: %w", err)
+	}
 
 	return nil
 }
