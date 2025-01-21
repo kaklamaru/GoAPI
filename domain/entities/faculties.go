@@ -4,7 +4,7 @@ type Faculty struct {
 	FacultyID   uint   `gorm:"primaryKey;autoIncrement" json:"faculty_id"`
 	FacultyCode string `gorm:"unique;not null" json:"faculty_code"`
 	FacultyName string `gorm:"unique;not null" json:"faculty_name"`
-	SuperUser   uint   `gorm:"default:null" json:"super_user"`
+	SuperUser   *uint   `gorm:"default:null" json:"super_user"`
 	Teacher   Teacher `gorm:"foreignKey:SuperUser;references:UserID" json:"teacher"`
 }
 

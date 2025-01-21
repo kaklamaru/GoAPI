@@ -61,7 +61,6 @@ func (c *FacultyController) UpdateFaculty(ctx *fiber.Ctx) error {
         })
     }
 
-    // เรียกใช้ usecase ในการอัปเดตคณะ
     if err := c.usecase.UpdateFaculty(faculty); err != nil {
         return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "error": "Unable to update faculty",

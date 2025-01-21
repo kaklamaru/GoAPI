@@ -124,7 +124,7 @@ func SetupDatabase(cfg *config.Config) Database {
         user := entities.User{
             Email:    cfg.Admin.Email,
             Password: password,
-            Role:     "admin",
+            Role:     "superadmin",
         }
         createResult := db.GetDb().Create(&user)
         if createResult.Error != nil {

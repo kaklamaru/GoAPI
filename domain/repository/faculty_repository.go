@@ -13,9 +13,8 @@ type FacultyRepository interface {
 	UpdateFaculty(faculty *entities.Faculty) error
 	GetAllFaculties() ([]entities.Faculty, error)
 	GetFacultyByID(id uint) (*entities.Faculty, error)
-    DeleteFacultyByID(id uint) (*entities.Faculty, error)
+	DeleteFacultyByID(id uint) (*entities.Faculty, error)
 	AddFacultyStaff(faculty *entities.Faculty) error
-	
 }
 
 type facultyRepository struct {
@@ -34,10 +33,18 @@ func (r *facultyRepository) CreateFaculty(faculty *entities.Faculty) error {
 
 // UpdateFaculty แก้ไขข้อมูลคณะ
 func (r *facultyRepository) UpdateFaculty(faculty *entities.Faculty) error {
-    // เรียกใช้ GORM เพื่ออัปเดตข้อมูลคณะ
-    return r.db.Save(faculty).Error
+	var newfaculty entities.Faculty
+	if err := r.db.First(&newfaculty, faculty.FacultyID).Error; err != nil {
+		return err
+	}
+	newfaculty.FacultyCode = faculty.FacultyCode
+	newfaculty.FacultyName = faculty.FacultyName
+	// ตั้งค่า SuperUser เป็น nil หากเป็น 0
+	if faculty.SuperUser != nil && *faculty.SuperUser == 0 {
+		newfaculty.SuperUser = nil
+	} 
+	return r.db.Save(newfaculty).Error
 }
-
 
 // GetAllFaculties แสดงข้อมูลคณะทั้งหมด
 func (r *facultyRepository) GetAllFaculties() ([]entities.Faculty, error) {
@@ -71,6 +78,6 @@ func (r *facultyRepository) DeleteFacultyByID(id uint) (*entities.Faculty, error
 	return faculty, nil
 }
 
-func (r *facultyRepository) AddFacultyStaff(faculty *entities.Faculty) error{
+func (r *facultyRepository) AddFacultyStaff(faculty *entities.Faculty) error {
 	return r.db.Save(faculty).Error
 }

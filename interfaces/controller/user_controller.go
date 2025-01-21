@@ -8,6 +8,7 @@ import (
 	"RESTAPI/usecase"
 	"RESTAPI/utility"
 	"time"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,11 +18,11 @@ type UserController struct {
 	txManager   transaction.TransactionManager
 }
 
-func NewUserController(userUsecase usecase.UserUsecase,jwtService jwt.JWTService,txManager   transaction.TransactionManager) *UserController {
+func NewUserController(userUsecase usecase.UserUsecase, jwtService jwt.JWTService, txManager transaction.TransactionManager) *UserController {
 	return &UserController{
 		userUsecase: userUsecase,
 		jwtService:  jwtService,
-		txManager: txManager,
+		txManager:   txManager,
 	}
 }
 
@@ -78,7 +79,6 @@ func (c *UserController) RegisterStudent(ctx *fiber.Ctx) error {
 	})
 }
 
-
 func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
 	var req struct {
 		Email     string `json:"email"`
@@ -106,9 +106,7 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
 	tx := c.txManager.Begin()
 
 	return utility.HandleTransaction(ctx, tx, func() error {
-		if req.Role == "" {
-			req.Role = "teacher"
-		}
+		req.Role = "teacher"
 
 		// สร้าง user และ teacher
 		user := &entities.User{
@@ -132,7 +130,6 @@ func (c *UserController) RegisterTeacher(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "registered successfully"})
 	})
 }
-
 
 func (c *UserController) Login(ctx *fiber.Ctx) error {
 	type loginRequest struct {
@@ -219,8 +216,14 @@ func (c *UserController) GetUserByClaims(ctx *fiber.Ctx) error {
 				"error": "Failed to retrieve teacher data",
 			})
 		}
+
 		return ctx.Status(fiber.StatusOK).JSON(teacher)
 
+	} else if role == "superadmin" {
+		return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+			"massage": "welcome superadmin",
+			"role":"superadmin",
+		})
 	} else {
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "Unauthorized access",
@@ -417,7 +420,7 @@ func (c *UserController) GetAllTeacher(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(teacher)
 }
 
-func (c *UserController) EditRole(ctx *fiber.Ctx) error{
+func (c *UserController) EditRole(ctx *fiber.Ctx) error {
 	var req struct {
 		Role string `json:"role"`
 	}
@@ -433,7 +436,7 @@ func (c *UserController) EditRole(ctx *fiber.Ctx) error{
 		})
 	}
 
-	err = c.userUsecase.EditRole(userID,req.Role)
+	err = c.userUsecase.EditRole(userID, req.Role)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve user",
@@ -441,6 +444,6 @@ func (c *UserController) EditRole(ctx *fiber.Ctx) error{
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":"Edit role success",
+		"message": "Edit role success",
 	})
 }

@@ -39,7 +39,6 @@ func (u *facultyUsecase) AddFaculty(faculty *entities.Faculty) error {
 
 // UpdateFaculty แก้ไขข้อมูลคณะ
 func (u *facultyUsecase) UpdateFaculty(faculty *entities.Faculty) error {
-	// เรียกใช้ repository เพื่ออัปเดตคณะในฐานข้อมูล
 	return u.repo.UpdateFaculty(faculty)
 }
 
@@ -72,6 +71,6 @@ func (u *facultyUsecase) AddFacultyStaff(facultyID uint,userID uint) error{
 	if err != nil {
 		return fmt.Errorf("user not found")
 	}
-	faculty.SuperUser=teacher.UserID
+	faculty.SuperUser=&teacher.UserID
 	return u.repo.AddFacultyStaff(faculty)
 }
