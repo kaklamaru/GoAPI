@@ -21,8 +21,8 @@ type Event struct {
 }
 
 type EventInside struct {
-	EventId   uint    `gorm:"primaryKey" json:"event_id"`
-	User      uint    `gorm:"primaryKey" json:"user_id"`
+	EventId uint `gorm:"primaryKey" json:"event_id"`
+	User    uint `gorm:"primaryKey" json:"user_id"`
 	// Event     Event   `gorm:"foreignKey:EventId;references:EventID" json:"event"`
 	Event     Event   `gorm:"foreignKey:EventId;references:EventID;constraint:OnDelete:CASCADE;" json:"event"`
 	Student   Student `gorm:"foreignKey:User;references:UserID" json:"student"`
@@ -60,7 +60,9 @@ type Done struct {
 }
 
 type News struct {
-	Userid   uint   `gorm:"primaryKey" json:"user_id"`
-	User     User   `gorm:"foreignKey:Userid;references:UserID" json:"student"`
-	TextNews string `json:"text_news"`
+	NewsID  uint   `gorm:"primaryKey;autoIncrement" json:"news_id"`
+	Title   string `json:"title"`
+	Userid  uint   `json:"user_id"`
+	User    User   `gorm:"foreignKey:Userid;references:UserID" json:"student"`
+	Message string `json:"message"`
 }

@@ -48,14 +48,16 @@ type eventUsecase struct {
 	branchRepo repository.BranchRepository
 	insideRepo repository.EventInsideRepository
 	outsideRepo repository.OutsideRepository
+	studentRepo repository.StudentRepository
 }
 
-func NewEventUsecase(eventRepo repository.EventRepository, branchRepo repository.BranchRepository, insideRepo repository.EventInsideRepository,outsideRepo repository.OutsideRepository) EventUsecase {
+func NewEventUsecase(eventRepo repository.EventRepository, branchRepo repository.BranchRepository, insideRepo repository.EventInsideRepository,outsideRepo repository.OutsideRepository,studentRepo repository.StudentRepository) EventUsecase {
 	return &eventUsecase{
 		eventRepo:  eventRepo,
 		branchRepo: branchRepo,
 		insideRepo: insideRepo,
 		outsideRepo: outsideRepo,
+		studentRepo: studentRepo,
 	}
 }
 
@@ -134,8 +136,29 @@ func (u *eventUsecase) CreateEvent(req *EventRequest, userID uint) error {
 		Years:          permission.Years,
 	}
 
-	return u.eventRepo.CreateEvent(event)
+	if err := u.eventRepo.CreateEvent(event) ;err != nil {
+		return err
+	}
+
+	userIDs, err := u.studentRepo.GetAllStudentID()
+    if err != nil {
+        return fmt.Errorf("failed to get users for event: %w", err)
+    }
+
+	for _, uid := range userIDs {
+        news := entities.News{
+            Title:    "กิจกรรมใหม่",
+            Userid:   uid,
+            Message: fmt.Sprintf("กิจกรรม'%s' '%s' '%s'", event.EventName,utility.FormatToThaiDate(event.StartDate),utility.FormatToThaiTime(event.StartDate)),
+        }
+        if err := u.eventRepo.NewsForUser(&news); err != nil {
+            return fmt.Errorf("failed to send news to user %d: %w", uid, err)
+        }
+    }
+	return nil
 }
+
+
 
 func (u *eventUsecase) GetAllEvent() ([]entities.EventResponse, error) {
 	events, err := u.eventRepo.GetAllEvent()
@@ -268,16 +291,35 @@ func (u *eventUsecase) EditEvent(eventID uint, req *EventRequest, userID uint) e
 }
 
 func (u *eventUsecase) DeleteEvent(eventID uint, userID uint) error {
-	event, err := u.eventRepo.GetEventByID(eventID)
-	if err != nil {
-		return fmt.Errorf("event not found")
-	}
-	if event.Creator != userID {
-		return fmt.Errorf("you do not have permission to edit this event")
-	}
+    event, err := u.eventRepo.GetEventByID(eventID)
+    if err != nil {
+        return fmt.Errorf("event not found")
+    }
+    if event.Creator != userID {
+        return fmt.Errorf("you do not have permission to delete this event")
+    }
 
-	return u.eventRepo.DeleteEvent(event.EventID)
+    // Get all users associated with the event
+    userIDs, err := u.insideRepo.GroupByEvent(eventID)
+    if err != nil {
+        return fmt.Errorf("failed to get users for event: %w", err)
+    }
+
+    for _, uid := range userIDs {
+        news := entities.News{
+            Title:    "กิจกรรมถูกลบ",
+            Userid:   uid,
+            Message: fmt.Sprintf("กิจกรรม'%s' ที่คุณเข้าร่วมถูกลบแล้ว.", event.EventName),
+        }
+        if err := u.eventRepo.NewsForUser(&news); err != nil {
+            return fmt.Errorf("failed to send news to user %d: %w", uid, err)
+        }
+    }
+
+    // Delete the event
+    return u.eventRepo.DeleteEvent(event.EventID)
 }
+
 
 func (u *eventUsecase) CheckBranch(branchID uint) (bool, error) {
 	return u.branchRepo.BranchExists(branchID)

@@ -13,6 +13,7 @@ type StudentRepository interface {
 	CreateStudent(tx transaction.Transaction,student *entities.Student) error
 	EditStudentByID(student *entities.Student) error
 	GetAllStudent() ([]entities.Student, error)
+	GetAllStudentID() ([]uint,error)
 	// GetStudentByUserID(id uint) (*entities.Student, error)
 }
 
@@ -58,4 +59,17 @@ func (r *studentRepository) GetAllStudent() ([]entities.Student, error) {
 	}
 	fmt.Println(student)
 	return student, nil
+}
+
+func (r *studentRepository) GetAllStudentID() ([]uint,error){
+	var student []entities.Student
+    err := r.db.Find(&student).Error
+    if err != nil {
+        return nil, err
+    }
+    var userIDs []uint
+    for _, stdid := range student {
+        userIDs = append(userIDs, stdid.UserID)
+    }
+    return userIDs, nil
 }

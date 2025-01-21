@@ -108,6 +108,13 @@ func (u *userUsecase) EditTeacherByID(teacher *entities.Teacher) error {
 	return u.teacherRepo.EditTeacherByID(teacher)
 }
 
+func (u *userUsecase) GetAllStudentID() ([]uint,error){
+	allStudent, err := u.studentRepo.GetAllStudentID()
+	if err != nil {
+		return nil, err
+	}
+	return allStudent,nil
+}
 func (u *userUsecase) GetAllStudent() ([]entities.StudentResponse, error) {
 	allStudent, err := u.studentRepo.GetAllStudent()
 	if err != nil {

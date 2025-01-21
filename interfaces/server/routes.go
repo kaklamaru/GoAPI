@@ -34,7 +34,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 
 	insideRepo := repository.NewEventInsideRepository(db.GetDb())
 	outsideRepo := repository.NewOutsideRepository(db.GetDb())
-	eventUsecase := usecase.NewEventUsecase(eventRepo, branchRepo, insideRepo,outsideRepo)
+	eventUsecase := usecase.NewEventUsecase(eventRepo, branchRepo, insideRepo,outsideRepo,studentRepo)
 	insideUsecase := usecase.NewEventInsideUsecase(insideRepo, userRepo, eventUsecase, txManager)
 	eventController := controller.NewEventController(eventUsecase, txManager)
 	insideController := controller.NewEventInsideController(insideUsecase, eventUsecase, userUsecase)

@@ -21,6 +21,8 @@ type EventInsideRepository interface {
 	GetFilePath(eventID uint, userID uint) (string, error)
 	MyChecklist(userID uint, eventID uint) ([]entities.EventInside, error)
 	AllInsideThisYears(userID uint, year uint) ([]entities.EventInside, error)
+	GroupByEvent(eventID uint) ([]uint, error)
+
 }
 
 type insideRepository struct {
@@ -219,4 +221,17 @@ func (r *insideRepository) AllInsideThisYears(userID uint, year uint) ([]entitie
 		fmt.Println("Error fetching data:", err)
 	}
 	return eventInsides, nil
+}
+
+func (r *insideRepository) GroupByEvent(eventID uint) ([]uint, error) {
+    var eventInsides []entities.EventInside
+    err := r.db.Where("event_id = ?", eventID).Find(&eventInsides).Error
+    if err != nil {
+        return nil, fmt.Errorf("failed to find users for event ID %d: %w", eventID, err)
+    }
+    var userIDs []uint
+    for _, ei := range eventInsides {
+        userIDs = append(userIDs, ei.User)
+    }
+    return userIDs, nil
 }

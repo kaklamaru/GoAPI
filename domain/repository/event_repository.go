@@ -24,6 +24,7 @@ type EventRepository interface {
 	AllAllowedEvent() ([]entities.Event, error)
 	AllCurrentEvent() ([]entities.Event, error)
 	MyEvent(userID uint) ([]entities.Event,error)
+	NewsForUser(news *entities.News) error
 }
 
 type eventRepository struct {
@@ -208,6 +209,13 @@ func (r *eventRepository) ToggleEventStatus(eventID uint) error {
 	return r.db.Model(&entities.Event{}).
 		Where("event_id = ?", eventID).
 		Update("status", gorm.Expr("NOT status")).Error
+}
+
+func (r *eventRepository) NewsForUser(news *entities.News) error{
+	if err := r.db.Create(news).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 
