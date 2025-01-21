@@ -233,7 +233,8 @@ func (c *EventInsideController) ConfirmAndCheck(ctx *fiber.Ctx) error {
 		})
 	}
 	userID := uint(idInt)
-	if err := ctx.BodyParser(req); err != nil {
+
+	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request payload",
 		})
