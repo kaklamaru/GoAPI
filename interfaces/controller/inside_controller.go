@@ -216,19 +216,30 @@ func (c *EventInsideController) MyChecklist(ctx *fiber.Ctx) error {
 
 func (c *EventInsideController) ConfirmAndCheck(ctx *fiber.Ctx) error {
 	var req struct {
-		EventID uint   `json:"event_id"`
-		UserID  uint   `json:"user_id"`
 		Status  bool   `json:"status"`
 		Comment string `json:"comment"`
 	}
-
+	eventID, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid event ID",
+		})
+	}
+	idStr := ctx.Params("userid")
+	idInt, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid UserID",
+		})
+	}
+	userID := uint(idInt)
 	if err := ctx.BodyParser(req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request payload",
 		})
 	}
 
-	if err := c.insideUsecase.UpdateEventStatusAndComment(req.EventID, req.UserID, req.Status, req.Comment); err != nil {
+	if err := c.insideUsecase.UpdateEventStatusAndComment(eventID, userID, req.Status, req.Comment); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})

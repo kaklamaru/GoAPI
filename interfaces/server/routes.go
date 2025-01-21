@@ -45,7 +45,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	app.Post("/register/student", userController.RegisterStudent)
 	app.Post("/register/teacher", userController.RegisterTeacher)
 	app.Post("/login", userController.Login)
-	app.Get("/check", func(c *fiber.Ctx) error {
+	app.Get("/hello", func(c *fiber.Ctx) error {
 		fmt.Println("hello")
 		return c.SendString("Hello, world!")
 	})
@@ -97,6 +97,8 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	teacher.Delete("/event/:id", eventController.DeleteEvent)
 	admin.Delete("/event/:id", eventController.DeleteEvent)
 
+
+
 	protected.Get("/count/:id", insideController.CountEventInside)
 	student.Post("/join/:id", insideController.JoinEvent)
 	student.Delete("/unjoin/:id", insideController.UnJoinEventInside)
@@ -104,6 +106,8 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	student.Get("/file/:id", insideController.GetFileForMe)
 	teacher.Get("/file/:id/:userid", insideController.GetFile)
 	admin.Get("/file/:id/:userid", insideController.GetFile)
+	teacher.Put("/check/:id/:userid", insideController.GetFile)
+	admin.Put("/check/:id/:userid", insideController.GetFile)
 	teacher.Get("/checklist/:id",insideController.MyChecklist)
 	admin.Get("/checklist/:id",insideController.MyChecklist)
 	student.Post("/outside",outsideController.CreateOutside)
@@ -111,4 +115,6 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	student.Get("/download/:id",outsideController.DownloadPDF)
 
 	student.Get("myevents/:year",eventController.AllMyEventThisYear)
+
+
 }
