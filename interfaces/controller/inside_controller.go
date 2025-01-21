@@ -136,7 +136,7 @@ func (c *EventInsideController) GetFileForMe(ctx *fiber.Ctx) error {
 			"error": "Invalid event ID",
 		})
 	}
-    // ดึง claims ของผู้ใช้
+	// ดึง claims ของผู้ใช้
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -144,7 +144,7 @@ func (c *EventInsideController) GetFileForMe(ctx *fiber.Ctx) error {
 		})
 	}
 
-    // ตรวจสอบ user_id ใน claims
+	// ตรวจสอบ user_id ใน claims
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -152,17 +152,17 @@ func (c *EventInsideController) GetFileForMe(ctx *fiber.Ctx) error {
 		})
 	}
 	userID := uint(userIDFloat)
-    // ดึง URL ของไฟล์ที่ต้องการ
+	// ดึง URL ของไฟล์ที่ต้องการ
 	filePath, err := c.insideUsecase.GetFile(id, userID)
-    if err != nil {
-        return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": err.Error(),
-        })
-    }
-    return ctx.SendFile(filePath)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return ctx.SendFile(filePath)
 }
 
-func (c *EventInsideController) GetFile(ctx *fiber.Ctx) error{
+func (c *EventInsideController) GetFile(ctx *fiber.Ctx) error {
 	eventID, err := utility.GetUintID(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -178,16 +178,16 @@ func (c *EventInsideController) GetFile(ctx *fiber.Ctx) error{
 	}
 	userID := uint(idInt)
 	filePath, err := c.insideUsecase.GetFile(eventID, userID)
-    if err != nil {
-        return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "error": err.Error(),
-        })
-    }
-    return ctx.SendFile(filePath)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return ctx.SendFile(filePath, false)
 
 }
 
-func (c *EventInsideController) MyChecklist(ctx *fiber.Ctx) error{
+func (c *EventInsideController) MyChecklist(ctx *fiber.Ctx) error {
 	id, err := utility.GetUintID(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -207,29 +207,12 @@ func (c *EventInsideController) MyChecklist(ctx *fiber.Ctx) error{
 		})
 	}
 	userID := uint(userIDFloat)
-	checklist,err:= c.insideUsecase.MyChecklist(userID,id)
+	checklist, err := c.insideUsecase.MyChecklist(userID, id)
 	if err != nil {
 		return err
 	}
 	return ctx.Status(fiber.StatusOK).JSON(checklist)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 func (c *EventInsideController) ConfirmAndCheck(ctx *fiber.Ctx) error {
 	var req struct {
@@ -278,9 +261,3 @@ func (c *EventInsideController) CountEventInside(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(freeSpace)
 }
-
-
-
-
-
-
