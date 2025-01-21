@@ -14,6 +14,8 @@ type FacultyRepository interface {
 	GetAllFaculties() ([]entities.Faculty, error)
 	GetFacultyByID(id uint) (*entities.Faculty, error)
     DeleteFacultyByID(id uint) (*entities.Faculty, error)
+	AddFacultyStaff(faculty *entities.Faculty) error
+	
 }
 
 type facultyRepository struct {
@@ -67,4 +69,8 @@ func (r *facultyRepository) DeleteFacultyByID(id uint) (*entities.Faculty, error
 		return nil, err
 	}
 	return faculty, nil
+}
+
+func (r *facultyRepository) AddFacultyStaff(faculty *entities.Faculty) error{
+	return r.db.Save(faculty).Error
 }

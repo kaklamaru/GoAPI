@@ -11,10 +11,10 @@ import (
 type UserRepository interface {
 	CreateUser(tx transaction.Transaction, user *entities.User) error
 	GetUserByEmail(email string) (*entities.User, error)
-	GetStudentByUserID(userID uint) (*entities.Student, error)
-	GetTeacherByUserID(userID uint) (*entities.Teacher, error)
 	GetUser(userID uint) (*entities.User,error)
 	EditRole(user entities.User) error
+	GetStudentByUserID(userID uint) (*entities.Student, error)
+	GetTeacherByUserID(userID uint) (*entities.Teacher, error)
 
 }
 
@@ -55,3 +55,4 @@ func (r *userRepository) GetUser(userID uint) (*entities.User,error){
 func (r *userRepository) EditRole(user entities.User) error{
 	return r.db.Save(user).Error
 }
+

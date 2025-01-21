@@ -4,6 +4,7 @@ import (
 	"RESTAPI/domain/entities"
 	"RESTAPI/usecase"
 	"RESTAPI/utility"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -43,7 +44,6 @@ func (c *FacultyController) AddFaculty(ctx *fiber.Ctx) error {
 
 // UpdateFaculty ฟังก์ชันสำหรับแก้ไขข้อมูลคณะ
 func (c *FacultyController) UpdateFaculty(ctx *fiber.Ctx) error {
-    // สร้างตัวแปรสำหรับเก็บข้อมูลคณะจาก request body
 
     faculty := new(entities.Faculty)
     id, err := utility.GetUintID(ctx)
@@ -85,7 +85,6 @@ func (c *FacultyController) GetAllFaculties(ctx *fiber.Ctx) error {
     return ctx.Status(fiber.StatusOK).JSON(faculties)
 }
 
-// GetFaculty ฟังก์ชันสำหรับดึงข้อมูลคณะตาม ID
 func (c *FacultyController) GetFaculty(ctx *fiber.Ctx) error {
     // ดึงค่า ID จากพารามิเตอร์ของ URL
     id, err := utility.GetUintID(ctx)
@@ -102,7 +101,6 @@ func (c *FacultyController) GetFaculty(ctx *fiber.Ctx) error {
         })
     }
 
-    // ส่งคืนข้อมูลคณะที่พบในรูปแบบ JSON
     return ctx.Status(fiber.StatusOK).JSON(faculty)
 }
 
@@ -122,5 +120,31 @@ func (c *FacultyController) DeleteFacultyByID(ctx *fiber.Ctx) error{
     return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
         "message": "Faculty deleted successfully",
         "faculty": faculty, 
+    })
+}
+
+func (c *FacultyController) AddFacultyStaff(ctx *fiber.Ctx) error{
+    facultyID, err := utility.GetUintID(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid event ID",
+		})
+	}
+	idStr := ctx.Params("userid")
+	idInt, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid UserID",
+		})
+	}
+	userID := uint(idInt)
+
+    if err:=c.usecase.AddFacultyStaff(facultyID,userID);err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error":err,
+        })
+    }
+    return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+        "massage":"successfully",
     })
 }

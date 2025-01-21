@@ -3,6 +3,7 @@ package database
 import (
 	"RESTAPI/config"
 	"RESTAPI/domain/entities"
+	"RESTAPI/pkg"
 	"fmt"
 	"log"
 
@@ -12,78 +13,77 @@ import (
 
 // Interface สำหรับการเชื่อมต่อฐานข้อมูล
 type Database interface {
-    GetDb() *gorm.DB
-    AutoMigrate() error
+	GetDb() *gorm.DB
+	AutoMigrate() error
 }
 
 type mysqlDatabase struct {
-    Db *gorm.DB
+	Db *gorm.DB
 }
 
 // ฟังก์ชันสำหรับสร้าง instance ของฐานข้อมูล
 func NewMySQLDatabase(cfg *config.Config) (Database, error) {
-    db, err := gorm.Open(mysql.Open(cfg.DSN), &gorm.Config{})
-    if err != nil {
-        return nil, err
-    }
-    return &mysqlDatabase{Db: db}, nil
+	db, err := gorm.Open(mysql.Open(cfg.DSN), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+	return &mysqlDatabase{Db: db}, nil
 }
 
 // ฟังก์ชันสำหรับดึง instance ของฐานข้อมูล
 func (m *mysqlDatabase) GetDb() *gorm.DB {
-    return m.Db
+	return m.Db
 }
 
 // ฟังก์ชันสำหรับทำ AutoMigrate
 func (m *mysqlDatabase) AutoMigrate() error {
-    // Migrate Faculty table first
-    if err := m.Db.AutoMigrate(&entities.Faculty{}); err != nil {
-        return fmt.Errorf("failed to migrate Faculty: %w", err)
-    }
 
-    // Migrate Branch table after Faculty
-    if err := m.Db.AutoMigrate(&entities.Branch{}); err != nil {
-        return fmt.Errorf("failed to migrate Branch: %w", err)
-    }
+	// Migrate other tables as needed
+	if err := m.Db.AutoMigrate(&entities.User{}); err != nil {
+		return fmt.Errorf("failed to migrate User: %w", err)
+	}
 
-    // Migrate other tables as needed
-    if err := m.Db.AutoMigrate(&entities.User{}); err != nil {
-        return fmt.Errorf("failed to migrate User: %w", err)
-    }
+	if err := m.Db.AutoMigrate(&entities.Teacher{}); err != nil {
+		return fmt.Errorf("failed to migrate Teacher: %w", err)
+	}
+	// Migrate Faculty table first
+	if err := m.Db.AutoMigrate(&entities.Faculty{}); err != nil {
+		return fmt.Errorf("failed to migrate Faculty: %w", err)
+	}
 
-    if err := m.Db.AutoMigrate(&entities.Teacher{}); err != nil {
-        return fmt.Errorf("failed to migrate Teacher: %w", err)
-    }
-    if err := m.Db.AutoMigrate(&entities.Student{}); err != nil {
-        return fmt.Errorf("failed to migrate Student: %w", err)
-    }
-    if err := m.Db.AutoMigrate(&entities.Event{}); err != nil {
-        return fmt.Errorf("failed to migrate Event: %w", err)
-    }
-    if err := m.Db.AutoMigrate(&entities.EventInside{}); err != nil {
-        return fmt.Errorf("failed to migrate EventInside: %w", err)
-    }
-    if err := m.Db.AutoMigrate(&entities.EventOutside{}); err != nil {
-        return fmt.Errorf("failed to migrate EventInside: %w", err)
-    }
+	// Migrate Branch table after Faculty
+	if err := m.Db.AutoMigrate(&entities.Branch{}); err != nil {
+		return fmt.Errorf("failed to migrate Branch: %w", err)
+	}
+	if err := m.Db.AutoMigrate(&entities.Student{}); err != nil {
+		return fmt.Errorf("failed to migrate Student: %w", err)
+	}
+	if err := m.Db.AutoMigrate(&entities.Event{}); err != nil {
+		return fmt.Errorf("failed to migrate Event: %w", err)
+	}
+	if err := m.Db.AutoMigrate(&entities.EventInside{}); err != nil {
+		return fmt.Errorf("failed to migrate EventInside: %w", err)
+	}
+	if err := m.Db.AutoMigrate(&entities.EventOutside{}); err != nil {
+		return fmt.Errorf("failed to migrate EventInside: %w", err)
+	}
 
-    return nil
+	return nil
 }
-
 
 // MYSQL
 func SetupDatabase(cfg *config.Config) Database {
-    db, err := NewMySQLDatabase(cfg)
-    if err != nil {
-        log.Fatalf("failed to connect to database: %v", err)
-    }
+	db, err := NewMySQLDatabase(cfg)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
 
-    err = db.AutoMigrate()
-    if err != nil {
-        log.Fatalf("failed to migrate database: %v", err)
-    }
+	err = db.AutoMigrate()
+	if err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
+	}
 
-    addTriggerIfNotExists(db, "before_insert_students", `
+	addTriggerIfNotExists(db, "before_insert_students", `
         CREATE TRIGGER before_insert_students
         BEFORE INSERT ON students
         FOR EACH ROW
@@ -95,8 +95,8 @@ func SetupDatabase(cfg *config.Config) Database {
         END;
     `)
 
-    // เพิ่ม Trigger สำหรับ Teachers
-    addTriggerIfNotExists(db, "before_insert_teachers", `
+	// เพิ่ม Trigger สำหรับ Teachers
+	addTriggerIfNotExists(db, "before_insert_teachers", `
         CREATE TRIGGER before_insert_teachers
         BEFORE INSERT ON teachers
         FOR EACH ROW
@@ -107,6 +107,30 @@ func SetupDatabase(cfg *config.Config) Database {
             END IF;
         END;
     `)
+    password, err := pkg.HashPassword(cfg.Admin.Password)
+    if err != nil {
+        log.Fatalf("failed to hash password: %v", err)
+    }
+
+    var admin entities.User
+    result := db.GetDb().Where("email = ?", cfg.Admin.Email).First(&admin)
+    if result.Error == nil {
+        log.Println("Admin user already exists.")
+    } else if result.Error == gorm.ErrRecordNotFound {
+        user := entities.User{
+            Email:    cfg.Admin.Email,
+            Password: password,
+            Role:     "admin",
+        }
+        createResult := db.GetDb().Create(&user)
+        if createResult.Error != nil {
+            log.Fatalf("failed to create admin user: %v", createResult.Error)
+        } else {
+            log.Println("Admin user created successfully!")
+        }
+    } else {
+        log.Fatalf("failed to check admin user existence: %v", result.Error)
+    }
 
     log.Println("Database connected, migrated, and triggers added successfully!")
     return db
@@ -114,23 +138,23 @@ func SetupDatabase(cfg *config.Config) Database {
 
 // ฟังก์ชันเพื่อเพิ่ม Trigger ถ้ามันยังไม่มี
 func addTriggerIfNotExists(db Database, triggerName, triggerSQL string) {
-    var count int
-    // ตรวจสอบว่า trigger มีอยู่แล้วหรือไม่
-    query := fmt.Sprintf("SHOW TRIGGERS LIKE '%s'", triggerName)
-    err := db.GetDb().Raw(query).Scan(&count).Error
-    if err != nil {
-        log.Printf("Error checking trigger existence: %v", err)
-        return
-    }
+	var count int
+	// ตรวจสอบว่า trigger มีอยู่แล้วหรือไม่
+	query := fmt.Sprintf("SHOW TRIGGERS LIKE '%s'", triggerName)
+	err := db.GetDb().Raw(query).Scan(&count).Error
+	if err != nil {
+		log.Printf("Error checking trigger existence: %v", err)
+		return
+	}
 
-    if count == 0 {
-        // ถ้าไม่มี trigger นี้ก็สร้างใหม่
-        if err := db.GetDb().Exec(triggerSQL).Error; err != nil {
-            log.Printf("Failed to create trigger %s: %v", triggerName, err)
-        } else {
-            log.Printf("Trigger %s created successfully!", triggerName)
-        }
-    } else {
-        log.Printf("Trigger %s already exists, skipping creation.", triggerName)
-    }
+	if count == 0 {
+		// ถ้าไม่มี trigger นี้ก็สร้างใหม่
+		if err := db.GetDb().Exec(triggerSQL).Error; err != nil {
+			log.Printf("Failed to create trigger %s: %v", triggerName, err)
+		} else {
+			log.Printf("Trigger %s created successfully!", triggerName)
+		}
+	} else {
+		log.Printf("Trigger %s already exists, skipping creation.", triggerName)
+	}
 }

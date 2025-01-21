@@ -14,8 +14,13 @@ type Config struct {
     DSN        string // Data Source Name สำหรับการเชื่อมต่อฐานข้อมูล
     JWTSecret  string // Secret key สำหรับ JWT
     ServerPort int    // พอร์ตของเซิร์ฟเวอร์
+    Admin       Admin
 }
-
+type Admin struct{
+    Email string
+    Password string
+    Role string
+}
 // LoadConfig ฟังก์ชันสำหรับโหลดค่าคอนฟิกจากไฟล์ .env
 func LoadConfig() *Config {
     // โหลดค่าคอนฟิกจากไฟล์ .env
@@ -32,6 +37,10 @@ func LoadConfig() *Config {
         os.Getenv("DB_PORT"),      // ดึงค่า DB_PORT จากไฟล์ .env
         os.Getenv("DB_NAME"),      // ดึงค่า DB_NAME จากไฟล์ .env
     )
+    
+    email := os.Getenv("USER")
+    password := os.Getenv("PASSWORD")
+
 
     // ดึงค่า JWT_SECRET จากไฟล์ .env
     jwtSecret := os.Getenv("JWT_SECRET")
@@ -52,5 +61,9 @@ func LoadConfig() *Config {
         DSN:        dsn,
         JWTSecret:  jwtSecret,
         ServerPort: serverPort,
+        Admin: Admin{
+            Email: email,
+            Password: password,
+        } ,
     }
 }

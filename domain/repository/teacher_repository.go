@@ -12,6 +12,7 @@ type TeacherRepository interface {
 	CreateTeacher(tx transaction.Transaction, teacher *entities.Teacher) error
 	EditTeacherByID(teacher *entities.Teacher) error
 	GetAllTeacher() ([]entities.Teacher, error)
+	// GetTeacherByUserID(id uint) (*entities.Teacher, error)
 }
 
 type teacherRepository struct {
@@ -45,3 +46,5 @@ func (r *teacherRepository) GetAllTeacher() ([]entities.Teacher, error) {
 	}
 	return teacher, nil
 }
+
+
