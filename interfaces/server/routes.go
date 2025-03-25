@@ -55,10 +55,9 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	teacher := protected.Group("/teacher", middleware.RoleMiddleware("teacher"))
 	student := protected.Group("/student", middleware.RoleMiddleware("student"))
 	
-
 	super.Put("/role/:id",userController.EditRole)
-
 	admin.Put("/role/:id",userController.EditRole)
+	
 	admin.Put("/staff/:id/:userid",facultyController.AddFacultyStaff)
 	admin.Post("/event", eventController.CreateEvent)
 	teacher.Post("/event", eventController.CreateEvent)
@@ -69,6 +68,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin.Put("/personalinfo", userController.EditTeacher)
 	admin.Put("/studentinfo", userController.EditStudentByID)
 	admin.Put("/teacherinfo", userController.EditTeacherByID)
+
 	admin.Post("/faculty", facultyController.AddFaculty)
 	admin.Put("/faculty/:id", facultyController.UpdateFaculty)
 	admin.Delete("/faculty/:id", facultyController.DeleteFacultyByID)
@@ -80,8 +80,10 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	app.Get("/branchbyfaculty/:id", branchController.GetBranchesByFaculty)
 	admin.Put("/branch/:id", branchController.UpdateBranch)
 	admin.Delete("/branch/:id", branchController.DeleteBranchByID)
+
 	admin.Get("/students", userController.GetAllStudent)
 	admin.Get("/teachers", userController.GetAllTeacher)
+
 	admin.Put("/status/:id", eventController.StatusEvent)
 	teacher.Put("/status/:id", eventController.StatusEvent)
 	app.Get("/events", eventController.GetAllEvent)

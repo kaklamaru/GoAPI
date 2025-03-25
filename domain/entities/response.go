@@ -84,6 +84,7 @@ type MyOutside struct {
 	Intendant   string `json:"intendent"`
 	// Status      bool   `json:"status"`
 	// Comment     string `json:"comment"`
+	FilePDF   string  `json:"file_pdf"`
 }
 
 type MyInside struct {
@@ -96,4 +97,5 @@ type MyInside struct {
 	SchoolYear  uint   `json:"school_year"`
 	Status      bool   `json:"status"`
 	Comment     string `json:"comment"`
+	FilePDF   string  `json:"file_pdf"`
 }

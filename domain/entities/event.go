@@ -60,9 +60,10 @@ type Done struct {
 }
 
 type News struct {
-	NewsID  uint   `gorm:"primaryKey;autoIncrement" json:"news_id"`
-	Title   string `json:"title"`
-	Userid  uint   `json:"user_id"`
-	User    User   `gorm:"foreignKey:Userid;references:UserID" json:"student"`
-	Message string `json:"message"`
+	NewsID  uint      `gorm:"primaryKey;autoIncrement" json:"news_id"`
+	Title   string    `json:"title"`
+	Userid  uint      `json:"user_id"`
+	User    User      `gorm:"foreignKey:Userid;references:UserID" json:"student"`
+	Message string    `json:"message"`
+	CreatedAt time.Time `json:"created_at"`  // เพิ่มฟิลด์ created_at
 }

@@ -8,7 +8,6 @@ import (
 	jwtPkg "github.com/golang-jwt/jwt/v5"
 )
 
-// JWTMiddlewareFromCookie ตรวจสอบ JWT จาก Cookie
 func JWTMiddlewareFromCookie(jwtService *jwt.JWTService) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 
@@ -30,7 +29,7 @@ func JWTMiddlewareFromCookie(jwtService *jwt.JWTService) fiber.Handler {
 		return ctx.Next()
 	}
 }
-// Middleware ตรวจสอบหลายๆ role ได้
+
 func RoleMiddleware(allowedRoles ...string) fiber.Handler {
     return func(ctx *fiber.Ctx) error {
         claims, ok := ctx.Locals("claims").(jwtPkg.MapClaims) // ใช้ jwt.MapClaims จากที่ import ใน jwtService

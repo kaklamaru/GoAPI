@@ -27,5 +27,4 @@ type Student struct {
 	Year      uint   `gorm:"not null" json:"year"`
 	BranchId  uint   `gorm:"not null" json:"branch_id"`
 	Branch    Branch `gorm:"foreignKey:BranchId;references:BranchID" json:"branch"`
-
 }

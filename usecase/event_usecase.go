@@ -158,8 +158,6 @@ func (u *eventUsecase) CreateEvent(req *EventRequest, userID uint) error {
 	return nil
 }
 
-
-
 func (u *eventUsecase) GetAllEvent() ([]entities.EventResponse, error) {
 	events, err := u.eventRepo.GetAllEvent()
 	if err != nil {
@@ -179,6 +177,7 @@ func (u *eventUsecase) GetAllEvent() ([]entities.EventResponse, error) {
 	}
 	return res, nil
 }
+
 func (u *eventUsecase) AllAllowedEvent() ([]entities.EventResponse, error) {
 	events, err := u.eventRepo.AllAllowedEvent()
 	if err != nil {
@@ -383,7 +382,6 @@ func (u *eventUsecase) ToggleEventStatus(eventID uint, userID uint) error {
 	return u.eventRepo.ToggleEventStatus(event.EventID)
 }
 
-
 func (u *eventUsecase) AllMyEventThisYear(userID uint,year uint) ([]entities.MyInside,[]entities.MyOutside,error){
 	inside,err:= u.insideRepo.AllInsideThisYears(userID,year)
 	if err != nil {
@@ -401,6 +399,7 @@ func (u *eventUsecase) AllMyEventThisYear(userID uint,year uint) ([]entities.MyI
 			SchoolYear: event.Event.SchoolYear,
 			Status:event.Status,
 			Comment: event.Comment,
+			FilePDF: event.FilePDF,
 		}
 		insideEvents = append(insideEvents, mappedEvent)
 	}
@@ -419,6 +418,7 @@ func (u *eventUsecase) AllMyEventThisYear(userID uint,year uint) ([]entities.MyI
 			WorkingHour: event.WorkingHour,
 			SchoolYear: event.SchoolYear,
 			Intendant: event.Intendant,
+			FilePDF: event.FilePDF,
 		}
 		outsideEvents = append(outsideEvents, mappedEvent)
 	}

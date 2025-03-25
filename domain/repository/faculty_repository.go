@@ -39,7 +39,6 @@ func (r *facultyRepository) UpdateFaculty(faculty *entities.Faculty) error {
 	}
 	newfaculty.FacultyCode = faculty.FacultyCode
 	newfaculty.FacultyName = faculty.FacultyName
-	// ตั้งค่า SuperUser เป็น nil หากเป็น 0
 	if faculty.SuperUser != nil && *faculty.SuperUser == 0 {
 		newfaculty.SuperUser = nil
 	} 

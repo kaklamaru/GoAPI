@@ -78,13 +78,15 @@ func (m *mysqlDatabase) AutoMigrate() error {
 	return nil
 }
 
+
 // MYSQL
 func SetupDatabase(cfg *config.Config) Database {
+	
 	db, err := NewMySQLDatabase(cfg)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
-
+	
 	err = db.AutoMigrate()
 	if err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
@@ -138,7 +140,7 @@ func SetupDatabase(cfg *config.Config) Database {
     } else {
         log.Fatalf("failed to check admin user existence: %v", result.Error)
     }
-
+	
     log.Println("Database connected, migrated, and triggers added successfully!")
     return db
 }
