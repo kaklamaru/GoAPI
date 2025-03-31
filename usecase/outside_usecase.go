@@ -38,6 +38,7 @@ func (u *outsideUsecase) CreateOutside(req entities.OutsideRequest, userID uint)
 		EventName:   req.EventName,
 		StartDate:   startDate,
 		SchoolYear: req.SchoolYear,
+		Intendant:   req.Intendant,
 		Location:    req.Location,
 		WorkingHour: req.WorkingHour,
 	}

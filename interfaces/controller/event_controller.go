@@ -90,6 +90,7 @@ func (c *EventController) MyEvent(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusOK).JSON(events)
 }
+
 func (c *EventController) AllAllowedEvent(ctx *fiber.Ctx) error {
 	events, err := c.usecase.AllAllowedEvent()
 	if err != nil {

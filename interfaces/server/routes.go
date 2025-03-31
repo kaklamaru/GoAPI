@@ -105,6 +105,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	student.Post("/join/:id", insideController.JoinEvent)
 	student.Delete("/unjoin/:id", insideController.UnJoinEventInside)
 	student.Post("upload/:id", insideController.UploadFile)
+	
 	student.Get("/file/:id", insideController.GetFileForMe)
 	teacher.Get("/file/:id/:userid", insideController.GetFile)
 	admin.Get("/file/:id/:userid", insideController.GetFile)
@@ -112,6 +113,7 @@ func SetupRoutes(app *fiber.App, db database.Database, jwtService *jwt.JWTServic
 	admin.Put("/check/:id/:userid", insideController.ConfirmAndCheck)
 	teacher.Get("/checklist/:id",insideController.MyChecklist)
 	admin.Get("/checklist/:id",insideController.MyChecklist)
+
 	student.Post("/outside",outsideController.CreateOutside)
 	student.Get("/outside/:id",outsideController.GetOutsideByID)
 	student.Get("/download/:id",outsideController.DownloadPDF)

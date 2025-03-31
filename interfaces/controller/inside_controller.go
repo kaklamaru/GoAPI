@@ -249,7 +249,6 @@ func (c *EventInsideController) ConfirmAndCheck(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Checking successfully",
 	})
-
 }
 
 func (c *EventInsideController) CountEventInside(ctx *fiber.Ctx) error {
