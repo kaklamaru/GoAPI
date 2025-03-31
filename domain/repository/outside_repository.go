@@ -44,7 +44,7 @@ func (r *outsideRepository) GetOutsideByID(id uint) (*entities.EventOutside,erro
 
 func (r *outsideRepository) AllOutsideThisYears(userID uint, year uint) ([]entities.EventOutside, error) {
 	var eventOutside []entities.EventOutside
-	if err := r.db.Where("user_id = ? AND school_year = ?", userID, year).Find(&eventOutside).Error; err != nil {
+	if err := r.db.Where("user = ? AND school_year = ?", userID, year).Find(&eventOutside).Error; err != nil {
 		return nil, err
 	}
 	return eventOutside, nil
